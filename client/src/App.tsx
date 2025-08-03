@@ -32,7 +32,10 @@ function Router() {
   return (
     <Switch>
       {!isAuthenticated ? (
-        <Route path="/" component={Login} />
+        <>
+          <Route path="/" component={Login} />
+          <Route component={Login} />
+        </>
       ) : (
         <>
           <div className="min-h-screen bg-gray-50 flex">
@@ -54,7 +57,6 @@ function Router() {
           </div>
         </>
       )}
-      <Route component={NotFound} />
     </Switch>
   );
 }
