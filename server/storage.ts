@@ -172,7 +172,16 @@ export class DatabaseStorage implements IStorage {
     const total = totalResult[0]?.count || 0;
 
     // Get employees with pagination and sorting
-    const orderColumn = employees[sortBy as keyof typeof employees];
+    const sortColumns: Record<string, any> = {
+      name: employees.name,
+      role: employees.role,
+      team: employees.team,
+      status: employees.status,
+      rate: employees.rate,
+      startDate: employees.startDate,
+    };
+    
+    const orderColumn = sortColumns[sortBy] || employees.name;
     const orderBy = sortOrder === 'desc' ? desc(orderColumn) : asc(orderColumn);
     
     const employeesList = await db
@@ -300,7 +309,7 @@ export class DatabaseStorage implements IStorage {
         const employee: InsertEmployee = {
           slno: row.SLNO?.toString(),
           name: row.Name,
-          rate: row.Rate ? parseFloat(row.Rate.replace('$', '').replace(',', '')) : 0,
+          rate: row.Rate ? row.Rate.toString().replace('$', '').replace(',', '') : "0.00",
           role: row.Role,
           team: row.Team || 'NA',
           cId: row['C-ID'],
@@ -309,7 +318,7 @@ export class DatabaseStorage implements IStorage {
           status: row.Status?.toLowerCase() === 'active' ? 'active' : 'inactive',
           band: row.Band,
           sowId: row['SOW-ID'],
-          appxBilling: row['Appx Billing'] ? parseFloat(row['Appx Billing'].replace('$', '').replace(',', '')) : 0,
+          appxBilling: row['Appx Billing'] ? row['Appx Billing'].toString().replace('$', '').replace(',', '') : "0.00",
           shift: row.Shift,
           comments: row.Comments,
         };
@@ -319,7 +328,7 @@ export class DatabaseStorage implements IStorage {
           imported++;
         }
       } catch (error) {
-        errors.push(`Error importing row ${row.SLNO}: ${error.message}`);
+        errors.push(`Error importing row ${row.SLNO}: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
