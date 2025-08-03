@@ -311,11 +311,19 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRecentChanges(): Promise<Employee[]> {
-    return await db
+    const result = await db
       .select()
       .from(employees)
       .orderBy(desc(employees.updatedAt))
       .limit(10);
+    
+    console.log('Recent changes from DB:', result.slice(0, 2).map(emp => ({
+      id: emp.id,
+      name: emp.name,
+      updatedAt: emp.updatedAt
+    })));
+    
+    return result;
   }
 
   // Billing operations
