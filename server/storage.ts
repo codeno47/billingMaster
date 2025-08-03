@@ -4,7 +4,8 @@ import {
   billingRates,
   projects,
   type User,
-  type UpsertUser,
+  type InsertUser,
+  type LoginRequest,
   type Employee,
   type InsertEmployee,
   type UpdateEmployee,
@@ -14,12 +15,14 @@ import {
   type InsertProject,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, like, and, or, desc, asc } from "drizzle-orm";
+import { eq, like, and, or, desc, asc, sql, ne } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations (mandatory for Replit Auth)
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  // User operations for simple authentication
+  getUser(id: number): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  loginUser(credentials: LoginRequest): Promise<User | null>;
 
   // Employee operations
   getEmployees(filters?: {
@@ -59,25 +62,57 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations (mandatory for Replit Auth)
-  async getUser(id: string): Promise<User | undefined> {
+  // User operations for simple authentication
+  async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(userData: InsertUser): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
       .returning();
     return user;
+  }
+
+  async loginUser(credentials: LoginRequest): Promise<User | null> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.username, credentials.username),
+        eq(users.password, credentials.password) // In production, compare hashed passwords
+      ));
+    return user || null;
+  }
+
+  // Initialize predefined users
+  async initializeUsers(): Promise<void> {
+    const existingUsers = await db.select().from(users);
+    if (existingUsers.length === 0) {
+      await this.createUser({
+        username: "admin",
+        password: "admin123",
+        email: "admin@company.com",
+        firstName: "Admin",
+        lastName: "User",
+        role: "admin"
+      });
+      await this.createUser({
+        username: "finance",
+        password: "finance123", 
+        email: "finance@company.com",
+        firstName: "Finance",
+        lastName: "Manager",
+        role: "finance"
+      });
+    }
   }
 
   // Employee operations
@@ -137,7 +172,8 @@ export class DatabaseStorage implements IStorage {
     const total = totalResult[0]?.count || 0;
 
     // Get employees with pagination and sorting
-    const orderBy = sortOrder === 'desc' ? desc(employees[sortBy as keyof typeof employees]) : asc(employees[sortBy as keyof typeof employees]);
+    const orderColumn = employees[sortBy as keyof typeof employees];
+    const orderBy = sortOrder === 'desc' ? desc(orderColumn) : asc(orderColumn);
     
     const employeesList = await db
       .select()
@@ -213,7 +249,10 @@ export class DatabaseStorage implements IStorage {
       .groupBy(employees.team)
       .orderBy(desc(sql`count(*)`));
 
-    return teams.filter(t => t.team && t.team !== 'NA');
+    return teams.filter(t => t.team && t.team !== 'NA').map(t => ({
+      team: t.team!,
+      count: Number(t.count)
+    }));
   }
 
   // Billing operations

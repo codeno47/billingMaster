@@ -1,8 +1,8 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertEmployeeSchema, updateEmployeeSchema } from "@shared/schema";
+import { setupAuth, isAuthenticated, requireRole } from "./auth";
+import { insertEmployeeSchema, updateEmployeeSchema, insertBillingRateSchema, insertProjectSchema, loginSchema } from "@shared/schema";
 import { parseCSV } from "./services/csv-parser";
 import multer from "multer";
 
@@ -13,12 +13,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await setupAuth(app);
 
   // Auth routes
+  app.post('/api/login', async (req, res) => {
+    try {
+      const result = loginSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: "Invalid credentials format" });
+      }
+
+      const user = await storage.loginUser(result.data);
+      if (!user) {
+        return res.status(401).json({ message: "Invalid username or password" });
+      }
+
+      req.session.userId = user.id;
+      res.json({ user });
+    } catch (error: any) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Login failed" });
+    }
+  });
+
+  app.post('/api/logout', (req, res) => {
+    req.session.destroy(() => {
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
-      res.json(user);
-    } catch (error) {
+      res.json(req.user);
+    } catch (error: any) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
@@ -76,42 +100,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Admin only routes
-  const requireAdmin = (req: any, res: any, next: any) => {
-    const user = req.user;
-    if (!user || user.role !== 'admin') {
-      return res.status(403).json({ message: "Admin access required" });
-    }
-    next();
-  };
-
-  app.post("/api/employees", isAuthenticated, requireAdmin, async (req, res) => {
+  app.post("/api/employees", isAuthenticated, requireRole('admin'), async (req, res) => {
     try {
       const validatedData = insertEmployeeSchema.parse(req.body);
       const employee = await storage.createEmployee(validatedData);
       res.status(201).json(employee);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating employee:", error);
       res.status(400).json({ message: "Failed to create employee", error: error.message });
     }
   });
 
-  app.put("/api/employees/:id", isAuthenticated, requireAdmin, async (req, res) => {
+  app.put("/api/employees/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
     try {
       const validatedData = updateEmployeeSchema.parse(req.body);
       const employee = await storage.updateEmployee(parseInt(req.params.id), validatedData);
       res.json(employee);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating employee:", error);
       res.status(400).json({ message: "Failed to update employee", error: error.message });
     }
   });
 
-  app.delete("/api/employees/:id", isAuthenticated, requireAdmin, async (req, res) => {
+  app.delete("/api/employees/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
     try {
       await storage.deleteEmployee(parseInt(req.params.id));
       res.status(204).send();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error deleting employee:", error);
       res.status(500).json({ message: "Failed to delete employee" });
     }
@@ -145,7 +160,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // CSV import (admin only)
-  app.post("/api/employees/import", isAuthenticated, requireAdmin, upload.single('file'), async (req: any, res) => {
+  app.post("/api/employees/import", isAuthenticated, requireRole('admin'), upload.single('file'), async (req: any, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -155,7 +170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await storage.importEmployeesFromCSV(csvData);
       
       res.json(result);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error importing CSV:", error);
       res.status(500).json({ message: "Failed to import CSV", error: error.message });
     }

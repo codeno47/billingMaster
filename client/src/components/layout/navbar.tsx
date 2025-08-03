@@ -2,15 +2,40 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { Bell, LogOut } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Navbar() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const logoutMutation = useMutation({
+    mutationFn: async () => {
+      await apiRequest("/api/logout", "POST");
+    },
+    onSuccess: () => {
+      toast({
+        title: "Logged out",
+        description: "You have been logged out successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+    },
+    onError: () => {
+      toast({
+        title: "Logout failed",
+        description: "There was an error logging out",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleLogout = () => {
-    window.location.href = "/api/logout";
+    logoutMutation.mutate();
   };
 
-  const getInitials = (firstName?: string, lastName?: string) => {
+  const getInitials = (firstName?: string | null, lastName?: string | null) => {
     if (firstName && lastName) {
       return `${firstName[0]}${lastName[0]}`;
     }
@@ -53,7 +78,6 @@ export default function Navbar() {
             
             <div className="flex items-center space-x-3">
               <Avatar>
-                <AvatarImage src={user?.profileImageUrl} />
                 <AvatarFallback className="bg-primary text-white">
                   {getInitials(user?.firstName, user?.lastName)}
                 </AvatarFallback>

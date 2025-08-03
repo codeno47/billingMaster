@@ -26,10 +26,13 @@ Preferred communication style: Simple, everyday language.
 - **CSV Processing**: Built-in CSV parser for bulk employee data import
 
 ## Authentication & Authorization
-- **Authentication Provider**: Replit Auth using OpenID Connect
+- **Authentication Provider**: Simple username/password authentication (replaced Replit SSO)
 - **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
 - **Authorization**: Role-based access control with 'admin' and 'finance' roles
 - **Route Protection**: Middleware-based authentication checks and frontend route guards
+- **Predefined Users**: 
+  - Admin: username='admin', password='admin123' (full access)
+  - Finance: username='finance', password='finance123' (read-only access to most features)
 
 ## Data Storage
 - **Database**: PostgreSQL with Neon serverless driver
