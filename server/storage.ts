@@ -15,7 +15,7 @@ import {
   type InsertProject,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, like, and, or, desc, asc, sql, ne, isNotNull, isNull, count, sum } from "drizzle-orm";
+import { eq, like, ilike, and, or, desc, asc, sql, ne, isNotNull, isNull, count, sum } from "drizzle-orm";
 
 export interface IStorage {
   // User operations for simple authentication
@@ -145,8 +145,9 @@ export class DatabaseStorage implements IStorage {
     const conditions = [];
 
     if (search) {
+      console.log('Search term:', search);
       conditions.push(
-        like(employees.name, `${search}%`)
+        ilike(employees.name, `${search}%`)
       );
     }
 
