@@ -340,6 +340,7 @@ export default function Employees() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Cost Centres</SelectItem>
+              <SelectItem value="none">Not Assigned</SelectItem>
               {costCentres.map((centre: string) => (
                 <SelectItem key={centre} value={centre}>
                   {centre}

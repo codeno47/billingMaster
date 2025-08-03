@@ -15,7 +15,7 @@ import {
   type InsertProject,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, like, and, or, desc, asc, sql, ne, isNotNull, count, sum } from "drizzle-orm";
+import { eq, like, and, or, desc, asc, sql, ne, isNotNull, isNull, count, sum } from "drizzle-orm";
 
 export interface IStorage {
   // User operations for simple authentication
@@ -167,7 +167,14 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (costCentre && costCentre !== 'all') {
-      conditions.push(eq(employees.costCentre, costCentre));
+      if (costCentre === 'none') {
+        conditions.push(or(
+          eq(employees.costCentre, ''),
+          isNull(employees.costCentre)
+        ));
+      } else {
+        conditions.push(eq(employees.costCentre, costCentre));
+      }
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

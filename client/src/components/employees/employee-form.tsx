@@ -30,7 +30,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
       role: employee?.role || "",
       team: employee?.team || "",
       rate: employee?.rate || "0.00",
-      costCentre: employee?.costCentre || "",
+      costCentre: employee?.costCentre || "none",
       cId: employee?.cId || "",
       startDate: employee?.startDate || "",
       endDate: employee?.endDate || "",
@@ -53,6 +53,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
         ...data,
         rate: data.rate ? data.rate.toString() : "0.00",
         appxBilling: data.appxBilling ? data.appxBilling.toString() : "0.00",
+        costCentre: data.costCentre === 'none' ? '' : data.costCentre,
       };
       
       const response = await apiRequest(method, url, formattedData);
@@ -121,7 +122,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Not Assigned</SelectItem>
+                    <SelectItem value="none">Not Assigned</SelectItem>
                     <SelectItem value="MH-BYN">MH-BYN</SelectItem>
                     <SelectItem value="MH-OPS">MH-OPS</SelectItem>
                     <SelectItem value="EXR-OPS">EXR-OPS</SelectItem>
