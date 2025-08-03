@@ -186,6 +186,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Change reports
+  app.get("/api/reports/changes", isAuthenticated, async (req, res) => {
+    try {
+      const { period, startDate, endDate } = req.query;
+      const filters = {
+        period: period as 'week' | 'month' | 'year',
+        startDate: startDate as string,
+        endDate: endDate as string,
+      };
+      
+      const changeReports = await storage.getChangeReports(filters);
+      res.json(changeReports);
+    } catch (error) {
+      console.error("Error fetching change reports:", error);
+      res.status(500).json({ message: "Failed to fetch change reports" });
+    }
+  });
+
   // Billing routes
   app.get("/api/billing/rates", isAuthenticated, async (req, res) => {
     try {

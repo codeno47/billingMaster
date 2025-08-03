@@ -51,6 +51,11 @@ export interface IStorage {
   getDistinctTeams(): Promise<string[]>;
   getDistinctCostCentres(): Promise<string[]>;
   getRecentChanges(): Promise<Employee[]>;
+  getChangeReports(filters?: {
+    period?: 'week' | 'month' | 'year';
+    startDate?: string;
+    endDate?: string;
+  }): Promise<Employee[]>;
 
   // Billing operations
   getBillingRates(): Promise<BillingRate[]>;
@@ -356,14 +361,56 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(employees.updatedAt))
       .limit(10);
     
-    console.log('Recent changes from DB:', result.slice(0, 2).map(emp => ({
-      id: emp.id,
-      name: emp.name,
-      updatedAt: emp.updatedAt,
-      changesSummary: emp.changesSummary
-    })));
+    // Debug logging removed for cleaner production logs
     
     return result;
+  }
+
+  async getChangeReports(filters: {
+    period?: 'week' | 'month' | 'year';
+    startDate?: string;
+    endDate?: string;
+  } = {}): Promise<Employee[]> {
+    const { period, startDate, endDate } = filters;
+    
+    let dateCondition;
+    const now = new Date();
+    
+    if (startDate && endDate) {
+      dateCondition = and(
+        sql`${employees.updatedAt} >= ${startDate}`,
+        sql`${employees.updatedAt} <= ${endDate}`
+      );
+    } else if (period) {
+      let periodStart: Date;
+      switch (period) {
+        case 'week':
+          periodStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'year':
+          periodStart = new Date(now.getFullYear(), 0, 1);
+          break;
+        default:
+          periodStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      }
+      dateCondition = sql`${employees.updatedAt} >= ${periodStart.toISOString()}`;
+    }
+
+    const whereClause = and(
+      isNotNull(employees.changesSummary),
+      ne(employees.changesSummary, ''),
+      dateCondition
+    );
+
+    return await db
+      .select()
+      .from(employees)
+      .where(whereClause)
+      .orderBy(desc(employees.updatedAt))
+      .limit(100);
   }
 
   // Billing operations
