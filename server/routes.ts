@@ -111,6 +111,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export employees (must come before /:id route)
+  app.get("/api/employees/export", isAuthenticated, async (req, res) => {
+    try {
+      const { employees } = await storage.getEmployees({ limit: 10000 });
+      
+      // Convert to CSV format matching the provided template
+      const headers = [
+        'SLNO', 'Name', 'Rate', 'Role', 'Cost-Centre', 'Team', 'C-ID', 
+        'Start-Date', 'End-Date', 'Status', 'Band', 'SOW-ID', 'Appx Billing', 'Shift', 'Comments'
+      ];
+      
+      const csvContent = [
+        headers.join(','),
+        ...employees.map((emp, index) => {
+          // Format rate with $ prefix
+          const formattedRate = emp.rate && !isNaN(Number(emp.rate)) ? `$${Number(emp.rate).toFixed(2)}` : '$0.00';
+          
+          // Format appx billing with $ prefix and comma separator
+          const formattedBilling = emp.appxBilling && !isNaN(Number(emp.appxBilling)) 
+            ? `"$${Number(emp.appxBilling).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}"` 
+            : '"$0.00"';
+          
+          // Capitalize status
+          const formattedStatus = emp.status === 'active' ? 'Active' : 'Inactive';
+          
+          return [
+            emp.slno || (index + 1).toString(),
+            emp.name || '',
+            formattedRate,
+            emp.role || '',
+            emp.costCentre || '',
+            emp.team || '',
+            emp.cId || '',
+            emp.startDate || '',
+            emp.endDate || '',
+            formattedStatus,
+            emp.band || '',
+            emp.sowId || '',
+            formattedBilling,
+            emp.shift || '',
+            emp.comments || ''
+          ].map((field, idx) => idx === 12 ? field : `"${field}"`).join(','); // Don't double-quote the billing field
+        })
+      ].join('\n');
+
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', 'attachment; filename=employees_export.csv');
+      res.send(csvContent);
+    } catch (error) {
+      console.error("Error exporting employees:", error);
+      res.status(500).json({ message: "Failed to export employees" });
+    }
+  });
+
   app.get("/api/employees/:id", isAuthenticated, async (req, res) => {
     try {
       const employee = await storage.getEmployee(parseInt(req.params.id));
@@ -232,43 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Export employees
-  app.get("/api/employees/export", isAuthenticated, async (req, res) => {
-    try {
-      const { employees } = await storage.getEmployees({ limit: 10000 });
-      
-      // Convert to CSV format
-      const headers = [
-        'Name', 'Role', 'Team', 'Rate', 'Status', 'Band', 'SOW ID', 
-        'Appx Billing', 'Shift', 'Start Date', 'End Date', 'Comments'
-      ];
-      
-      const csvContent = [
-        headers.join(','),
-        ...employees.map(emp => [
-          emp.name,
-          emp.role,
-          emp.team,
-          emp.rate,
-          emp.status,
-          emp.band,
-          emp.sowId,
-          emp.appxBilling,
-          emp.shift,
-          emp.startDate,
-          emp.endDate,
-          emp.comments
-        ].map(field => `"${field || ''}"`).join(','))
-      ].join('\n');
 
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=employees.csv');
-      res.send(csvContent);
-    } catch (error) {
-      console.error("Error exporting employees:", error);
-      res.status(500).json({ message: "Failed to export employees" });
-    }
-  });
 
   const httpServer = createServer(app);
   return httpServer;

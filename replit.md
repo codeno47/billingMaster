@@ -2,6 +2,13 @@
 
 This is an Employee Billing Management System built as a full-stack web application. The system allows administrators and finance managers to manage employee records, track billing information, and generate reports. It features role-based access control with two user types: administrators (full access) and finance managers (read-only access to most features). The application provides CRUD operations for employee data, CSV import/export functionality, and comprehensive billing analytics.
 
+## Recent Changes (August 2025)
+- Fixed database connection issues with Neon PostgreSQL by optimizing websocket configuration
+- Resolved CSV export routing conflict by moving export route before /:id parameter route
+- Updated CSV export format to match provided template with proper formatting:
+  - SLNO, Name, Rate ($X.XX), Role, Cost-Centre, Team, C-ID, Start-Date, End-Date, Status (Active/Inactive), Band, SOW-ID, Appx Billing ($X,XXX.XX), Shift, Comments
+- Enhanced export functionality with proper number formatting and error handling
+
 # User Preferences
 
 Preferred communication style: Simple, everyday language.
