@@ -3,10 +3,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, DollarSign, Building, TrendingUp } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
+interface DashboardStats {
+  total: string | number;
+  active: string | number;
+  inactive: string | number;
+  monthlyBilling: string | number;
+  averageRate: string | number;
+  teamDistribution?: { team: string; count: number }[];
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 
@@ -46,9 +55,9 @@ export default function Dashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Employees</p>
-                <p className="text-3xl font-bold text-gray-900">{stats?.total || 0}</p>
+                <p className="text-3xl font-bold text-gray-900">{Number(stats?.total) || 0}</p>
                 <p className="text-sm text-success mt-1">
-                  {stats?.active || 0} Active
+                  {Number(stats?.active) || 0} Active
                 </p>
               </div>
               <div className="bg-primary bg-opacity-10 rounded-lg p-3">
@@ -64,7 +73,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Monthly Billing</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  ${(stats?.monthlyBilling || 0).toLocaleString()}
+                  ${(Number(stats?.monthlyBilling) || 0).toLocaleString()}
                 </p>
                 <p className="text-sm text-success mt-1">
                   +12% this month
@@ -83,7 +92,7 @@ export default function Dashboard() {
               <div>
                 <p className="text-sm font-medium text-gray-600">Average Rate</p>
                 <p className="text-3xl font-bold text-gray-900">
-                  ${(stats?.averageRate || 0).toFixed(2)}
+                  ${(Number(stats?.averageRate) || 0).toFixed(2)}
                 </p>
                 <p className="text-sm text-warning mt-1">
                   Per hour
@@ -137,7 +146,7 @@ export default function Dashboard() {
                           'bg-gray-400'
                         }`}
                         style={{ 
-                          width: `${Math.min((team.count / (stats?.active || 1)) * 100, 100)}%` 
+                          width: `${Math.min((team.count / (Number(stats?.active) || 1)) * 100, 100)}%` 
                         }}
                       ></div>
                     </div>
