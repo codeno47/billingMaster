@@ -173,10 +173,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const stats = await storage.getEmployeeStats();
       const teamDistribution = await storage.getTeamDistribution();
+      const recentChanges = await storage.getRecentChanges();
       
       res.json({
         ...stats,
         teamDistribution,
+        recentChanges,
       });
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);

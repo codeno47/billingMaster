@@ -50,6 +50,7 @@ export interface IStorage {
   getTeamDistribution(): Promise<{ team: string; count: number }[]>;
   getDistinctTeams(): Promise<string[]>;
   getDistinctCostCentres(): Promise<string[]>;
+  getRecentChanges(): Promise<Employee[]>;
 
   // Billing operations
   getBillingRates(): Promise<BillingRate[]>;
@@ -145,7 +146,6 @@ export class DatabaseStorage implements IStorage {
     const conditions = [];
 
     if (search) {
-      console.log('Search term:', search);
       conditions.push(
         ilike(employees.name, `${search}%`)
       );
@@ -308,6 +308,14 @@ export class DatabaseStorage implements IStorage {
       team: t.team!,
       count: Number(t.count)
     }));
+  }
+
+  async getRecentChanges(): Promise<Employee[]> {
+    return await db
+      .select()
+      .from(employees)
+      .orderBy(desc(employees.updatedAt))
+      .limit(10);
   }
 
   // Billing operations

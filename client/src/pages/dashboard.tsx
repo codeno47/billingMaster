@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, DollarSign, Building, TrendingUp } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Users, DollarSign, Building, TrendingUp, Clock, Edit } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import type { Employee } from "@shared/schema";
 
 interface DashboardStats {
   total: string | number;
@@ -10,6 +12,7 @@ interface DashboardStats {
   monthlyBilling: string | number;
   averageRate: string | number;
   teamDistribution?: { team: string; count: number }[];
+  recentChanges?: Employee[];
 }
 
 export default function Dashboard() {
@@ -160,20 +163,45 @@ export default function Dashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent Activities</CardTitle>
+            <CardTitle className="flex items-center space-x-2">
+              <Clock className="w-5 h-5" />
+              <span>Recent Changes</span>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-success rounded-full"></div>
-                <p className="text-sm text-gray-600">System initialized successfully</p>
-                <span className="text-xs text-gray-400">Just now</span>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="w-2 h-2 bg-primary rounded-full"></div>
-                <p className="text-sm text-gray-600">Dashboard loaded</p>
-                <span className="text-xs text-gray-400">1 min ago</span>
-              </div>
+              {stats?.recentChanges?.slice(0, 6).map((employee) => (
+                <div key={employee.id} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full">
+                      <Edit className="w-4 h-4 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{employee.name}</p>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500">{employee.team}</span>
+                        <Badge 
+                          variant={employee.status === 'active' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {employee.status}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-gray-400">
+                      {new Date(employee.updatedAt || employee.createdAt || Date.now()).toLocaleDateString()}
+                    </p>
+                    <p className="text-xs text-gray-500">{employee.costCentre || 'Not Assigned'}</p>
+                  </div>
+                </div>
+              )) || (
+                <div className="text-center py-8 text-gray-500">
+                  <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No recent changes</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
