@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -22,6 +22,16 @@ const formSchema = insertEmployeeSchema;
 export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
   const { toast } = useToast();
   const isEditing = !!employee;
+
+  // Fetch teams data
+  const { data: teams = [] } = useQuery({
+    queryKey: ["/api/employees/teams"],
+    queryFn: async () => {
+      const response = await fetch("/api/employees/teams");
+      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
+      return response.json();
+    },
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -188,16 +198,11 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Matrix">Matrix</SelectItem>
-                    <SelectItem value="Trinity">Trinity</SelectItem>
-                    <SelectItem value="Cyher">Cyher</SelectItem>
-                    <SelectItem value="Neo">Neo</SelectItem>
-                    <SelectItem value="Prisam">Prisam</SelectItem>
-                    <SelectItem value="Morepheus">Morepheus</SelectItem>
-                    <SelectItem value="DevOPS">DevOPS</SelectItem>
-                    <SelectItem value="Regression">Regression</SelectItem>
-                    <SelectItem value="Automation">Automation</SelectItem>
-                    <SelectItem value="NA">NA</SelectItem>
+                    {teams.map((team: string) => (
+                      <SelectItem key={team} value={team}>
+                        {team}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
