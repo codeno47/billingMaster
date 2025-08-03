@@ -353,7 +353,7 @@ export class DatabaseStorage implements IStorage {
           rate: row.Rate ? row.Rate.toString().replace('$', '').replace(',', '') : "0.00",
           role: row.Role,
           team: row.Team || 'NA',
-          cId: row['Cost-Centre'] || row['C-ID'],
+          cId: row['Cost-Centre'],
           startDate: row['Start-Date'],
           endDate: row['End-Date'],
           status: row.Status?.toLowerCase() === 'active' ? 'active' : 'inactive',
