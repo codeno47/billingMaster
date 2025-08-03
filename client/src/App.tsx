@@ -17,34 +17,21 @@ import Sidebar from "@/components/layout/sidebar";
 import Navbar from "@/components/layout/navbar";
 
 function AuthenticatedLayout() {
-  const [location] = useLocation();
-
-  const renderPage = () => {
-    switch (location) {
-      case '/':
-        return <Dashboard />;
-      case '/employees':
-        return <Employees />;
-      case '/billing':
-        return <Billing />;
-      case '/reports':
-        return <Reports />;
-      case '/settings':
-        return <Settings />;
-      case '/users':
-        return <UserManagement />;
-      default:
-        return <NotFound />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Navbar />
         <main className="flex-1 p-6">
-          {renderPage()}
+          <Switch>
+            <Route path="/" component={Dashboard} />
+            <Route path="/employees" component={Employees} />
+            <Route path="/billing" component={Billing} />
+            <Route path="/reports" component={Reports} />
+            <Route path="/settings" component={Settings} />
+            <Route path="/users" component={UserManagement} />
+            <Route component={NotFound} />
+          </Switch>
         </main>
       </div>
     </div>
