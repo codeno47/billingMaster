@@ -361,7 +361,7 @@ export default function Reports() {
             </Card>
           </div>
 
-          {/* Performance Sparklines */}
+          {/* Performance Sparklines - Temporarily disabled for debugging */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -370,23 +370,9 @@ export default function Reports() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {isLoadingPerformance ? (
-                <div className="text-center py-8">Loading performance data...</div>
-              ) : performanceData.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No performance data available.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {performanceData.map((data) => (
-                    <InteractiveSparkline
-                      key={data.costCentre}
-                      data={data.monthlyData}
-                      costCentre={data.costCentre}
-                    />
-                  ))}
-                </div>
-              )}
+              <div className="text-center py-8 text-gray-500">
+                Interactive sparkline charts coming soon...
+              </div>
             </CardContent>
           </Card>
 
