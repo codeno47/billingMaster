@@ -112,9 +112,13 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             name="cId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Employee ID</FormLabel>
+                <FormLabel>Cost Centre</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input 
+                    {...field} 
+                    value={field.value || ""}
+                    placeholder="e.g. MH-BYN, MH-OPS, EXR-OPS"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -127,7 +131,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Role</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select role" />
@@ -151,7 +155,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Team</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select team" />
@@ -182,7 +186,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
               <FormItem>
                 <FormLabel>Rate ($)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input type="number" step="0.01" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -195,7 +199,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue />
@@ -217,7 +221,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Band</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select band" />
@@ -245,7 +249,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
               <FormItem>
                 <FormLabel>SOW ID</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -259,7 +263,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
               <FormItem>
                 <FormLabel>Approximate Billing ($)</FormLabel>
                 <FormControl>
-                  <Input type="number" step="0.01" {...field} />
+                  <Input type="number" step="0.01" {...field} value={field.value || ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -272,7 +276,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Shift</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select shift" />
@@ -296,7 +300,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
               <FormItem>
                 <FormLabel>Start Date</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="DD-MM-YYYY" />
+                  <Input {...field} value={field.value || ""} placeholder="DD-MM-YYYY" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -310,7 +314,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
               <FormItem>
                 <FormLabel>End Date</FormLabel>
                 <FormControl>
-                  <Input {...field} placeholder="DD-MM-YYYY" />
+                  <Input {...field} value={field.value || ""} placeholder="DD-MM-YYYY" />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -325,7 +329,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             <FormItem>
               <FormLabel>Comments</FormLabel>
               <FormControl>
-                <Textarea {...field} />
+                <Textarea {...field} value={field.value || ""} />
               </FormControl>
               <FormMessage />
             </FormItem>
