@@ -143,6 +143,15 @@ export default function EmployeeTable({
               </TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort("cId")}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Cost Centre</span>
+                  {getSortIcon("cId")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-gray-100"
                 onClick={() => onSort("rate")}
               >
                 <div className="flex items-center space-x-1">
@@ -199,6 +208,7 @@ export default function EmployeeTable({
                 </TableCell>
                 <TableCell className="text-gray-900">{employee.role}</TableCell>
                 <TableCell className="text-gray-900">{employee.team}</TableCell>
+                <TableCell className="text-gray-900">{employee.cId || 'Not assigned'}</TableCell>
                 <TableCell className="text-gray-900">${employee.rate}</TableCell>
                 <TableCell>
                   <Badge 

@@ -98,6 +98,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get distinct cost centres (must come before /:id route)
+  app.get("/api/employees/cost-centres", isAuthenticated, async (req, res) => {
+    try {
+      const costCentres = await storage.getDistinctCostCentres();
+      res.json(costCentres);
+    } catch (error) {
+      console.error("Error fetching cost centres:", error);
+      res.status(500).json({ message: "Failed to fetch cost centres" });
+    }
+  });
+
   app.get("/api/employees/:id", isAuthenticated, async (req, res) => {
     try {
       const employee = await storage.getEmployee(parseInt(req.params.id));

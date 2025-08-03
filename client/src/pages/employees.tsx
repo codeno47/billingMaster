@@ -23,6 +23,7 @@ export default function Employees() {
     team: "all",
     status: "all",
     role: "all",
+    costCentre: "all",
   });
   
   const [pagination, setPagination] = useState({
@@ -58,6 +59,15 @@ export default function Employees() {
     queryKey: ["/api/employees/teams"],
     queryFn: async () => {
       const response = await fetch("/api/employees/teams");
+      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
+      return response.json();
+    },
+  });
+
+  const { data: costCentres = [] } = useQuery({
+    queryKey: ["/api/employees/cost-centres"],
+    queryFn: async () => {
+      const response = await fetch("/api/employees/cost-centres");
       if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
       return response.json();
     },
@@ -279,7 +289,7 @@ export default function Employees() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Input
             placeholder="Search employees..."
             value={filters.search}
@@ -321,6 +331,20 @@ export default function Employees() {
               <SelectItem value="QA">QA</SelectItem>
               <SelectItem value="OPS">Operations</SelectItem>
               <SelectItem value="EXR">EXR</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={filters.costCentre} onValueChange={(value) => handleFilterChange("costCentre", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="All Cost Centres" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Cost Centres</SelectItem>
+              {costCentres.map((centre: string) => (
+                <SelectItem key={centre} value={centre}>
+                  {centre}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

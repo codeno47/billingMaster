@@ -30,6 +30,7 @@ export interface IStorage {
     team?: string;
     status?: string;
     role?: string;
+    costCentre?: string;
     offset?: number;
     limit?: number;
     sortBy?: string;
@@ -48,6 +49,7 @@ export interface IStorage {
   }>;
   getTeamDistribution(): Promise<{ team: string; count: number }[]>;
   getDistinctTeams(): Promise<string[]>;
+  getDistinctCostCentres(): Promise<string[]>;
 
   // Billing operations
   getBillingRates(): Promise<BillingRate[]>;
@@ -122,6 +124,7 @@ export class DatabaseStorage implements IStorage {
     team?: string;
     status?: string;
     role?: string;
+    costCentre?: string;
     offset?: number;
     limit?: number;
     sortBy?: string;
@@ -132,6 +135,7 @@ export class DatabaseStorage implements IStorage {
       team,
       status,
       role,
+      costCentre,
       offset = 0,
       limit = 50,
       sortBy = 'name',
@@ -162,6 +166,10 @@ export class DatabaseStorage implements IStorage {
       conditions.push(eq(employees.role, role));
     }
 
+    if (costCentre && costCentre !== 'all') {
+      conditions.push(eq(employees.cId, costCentre));
+    }
+
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
     // Get total count
@@ -177,9 +185,11 @@ export class DatabaseStorage implements IStorage {
       name: employees.name,
       role: employees.role,
       team: employees.team,
+      cId: employees.cId,
       status: employees.status,
       rate: employees.rate,
       startDate: employees.startDate,
+      appxBilling: employees.appxBilling,
     };
     
     const orderColumn = sortColumns[sortBy] || employees.name;
@@ -237,6 +247,19 @@ export class DatabaseStorage implements IStorage {
       .orderBy(employees.team);
     
     return result.map(row => row.team).filter(Boolean) as string[];
+  }
+
+  async getDistinctCostCentres(): Promise<string[]> {
+    const result = await db
+      .selectDistinct({ cId: employees.cId })
+      .from(employees)
+      .where(and(
+        ne(employees.cId, ""),
+        isNotNull(employees.cId)
+      ))
+      .orderBy(employees.cId);
+    
+    return result.map(row => row.cId).filter(Boolean) as string[];
   }
 
   async getEmployeeStats(): Promise<{
