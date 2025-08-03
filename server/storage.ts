@@ -221,6 +221,10 @@ export class DatabaseStorage implements IStorage {
     await db.delete(employees).where(eq(employees.id, id));
   }
 
+  async clearAllEmployees(): Promise<void> {
+    await db.delete(employees);
+  }
+
   async getEmployeeStats(): Promise<{
     total: number;
     active: number;

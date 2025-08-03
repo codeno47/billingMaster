@@ -132,6 +132,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/employees", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.clearAllEmployees();
+      res.json({ message: "All employees cleared successfully" });
+    } catch (error: any) {
+      console.error("Error clearing employees:", error);
+      res.status(500).json({ message: "Failed to clear employees" });
+    }
+  });
+
   // Dashboard stats
   app.get("/api/dashboard/stats", isAuthenticated, async (req, res) => {
     try {
