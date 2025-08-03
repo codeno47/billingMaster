@@ -17,10 +17,7 @@ interface EmployeeFormProps {
   onSuccess: () => void;
 }
 
-const formSchema = insertEmployeeSchema.extend({
-  rate: z.string().transform((val) => parseFloat(val) || 0),
-  appxBilling: z.string().transform((val) => parseFloat(val) || 0),
-});
+const formSchema = insertEmployeeSchema;
 
 export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
   const { toast } = useToast();
@@ -32,14 +29,14 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
       name: employee?.name || "",
       role: employee?.role || "",
       team: employee?.team || "",
-      rate: employee?.rate?.toString() || "0",
+      rate: employee?.rate || "0.00",
       cId: employee?.cId || "",
       startDate: employee?.startDate || "",
       endDate: employee?.endDate || "",
       status: employee?.status || "inactive",
       band: employee?.band || "",
       sowId: employee?.sowId || "",
-      appxBilling: employee?.appxBilling?.toString() || "0",
+      appxBilling: employee?.appxBilling || "0.00",
       shift: employee?.shift || "",
       comments: employee?.comments || "",
     },
@@ -50,7 +47,14 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
       const url = isEditing ? `/api/employees/${employee.id}` : '/api/employees';
       const method = isEditing ? 'PUT' : 'POST';
       
-      const response = await apiRequest(method, url, data);
+      // Ensure rate and appxBilling are strings and properly formatted
+      const formattedData = {
+        ...data,
+        rate: typeof data.rate === 'number' ? data.rate.toString() : (data.rate || "0.00"),
+        appxBilling: typeof data.appxBilling === 'number' ? data.appxBilling.toString() : (data.appxBilling || "0.00"),
+      };
+      
+      const response = await apiRequest(method, url, formattedData);
       return response.json();
     },
     onSuccess: () => {
