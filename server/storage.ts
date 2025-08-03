@@ -225,9 +225,48 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateEmployee(id: number, employee: UpdateEmployee): Promise<Employee> {
+    // Get the current employee data to compare changes
+    const [currentEmployee] = await db.select().from(employees).where(eq(employees.id, id));
+    
+    if (!currentEmployee) {
+      throw new Error("Employee not found");
+    }
+
+    // Generate changes summary
+    const changes: string[] = [];
+    const fieldsToCheck = {
+      name: 'Name',
+      role: 'Role', 
+      team: 'Team',
+      status: 'Status',
+      rate: 'Rate',
+      costCentre: 'Cost Centre',
+      cId: 'C-ID',
+      band: 'Band',
+      shift: 'Shift',
+      startDate: 'Start Date',
+      endDate: 'End Date',
+      appxBilling: 'Billing Amount'
+    };
+
+    for (const [field, label] of Object.entries(fieldsToCheck)) {
+      const oldValue = currentEmployee[field as keyof Employee];
+      const newValue = employee[field as keyof UpdateEmployee];
+      
+      if (newValue !== undefined && oldValue !== newValue) {
+        changes.push(`${label}: ${oldValue || 'None'} → ${newValue || 'None'}`);
+      }
+    }
+
+    const changesSummary = changes.length > 0 ? changes.join('; ') : 'Minor update';
+
     const [updatedEmployee] = await db
       .update(employees)
-      .set({ ...employee, updatedAt: new Date() })
+      .set({ 
+        ...employee, 
+        changesSummary,
+        updatedAt: new Date() 
+      })
       .where(eq(employees.id, id))
       .returning();
     return updatedEmployee;
@@ -320,7 +359,8 @@ export class DatabaseStorage implements IStorage {
     console.log('Recent changes from DB:', result.slice(0, 2).map(emp => ({
       id: emp.id,
       name: emp.name,
-      updatedAt: emp.updatedAt
+      updatedAt: emp.updatedAt,
+      changesSummary: emp.changesSummary
     })));
     
     return result;

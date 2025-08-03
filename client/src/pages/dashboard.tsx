@@ -178,7 +178,7 @@ export default function Dashboard() {
                     </div>
                     <div>
                       <p className="text-sm font-medium text-gray-900">{employee.name}</p>
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 mb-1">
                         <span className="text-xs text-gray-500">{employee.team}</span>
                         <Badge 
                           variant={employee.status === 'active' ? 'default' : 'secondary'}
@@ -187,6 +187,11 @@ export default function Dashboard() {
                           {employee.status}
                         </Badge>
                       </div>
+                      {employee.changesSummary && (
+                        <p className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded max-w-sm truncate">
+                          {employee.changesSummary}
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">

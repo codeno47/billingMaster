@@ -55,6 +55,7 @@ export const employees = pgTable("employees", {
   appxBilling: decimal("appx_billing", { precision: 10, scale: 2 }).default("0.00"),
   shift: varchar("shift"),
   comments: text("comments"),
+  changesSummary: text("changes_summary"), // Summary of what changed in the last update
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
