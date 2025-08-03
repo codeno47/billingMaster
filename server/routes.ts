@@ -268,6 +268,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/reports/cost-centre-performance", isAuthenticated, async (req, res) => {
+    try {
+      const performanceData = await storage.getCostCentrePerformanceData();
+      res.json(performanceData);
+    } catch (error) {
+      console.error("Error fetching cost centre performance data:", error);
+      res.status(500).json({ message: "Failed to fetch cost centre performance data" });
+    }
+  });
+
   // Billing routes
   app.get("/api/billing/rates", isAuthenticated, async (req, res) => {
     try {

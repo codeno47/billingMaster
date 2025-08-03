@@ -6,15 +6,26 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Filter, Download, Clock, Edit, TrendingUp, Building2, DollarSign } from "lucide-react";
+import { Calendar, Filter, Download, Clock, Edit, TrendingUp, Building2, DollarSign, BarChart3 } from "lucide-react";
 import type { Employee } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
+import { InteractiveSparkline } from "@/components/SparklineChart";
 
 type CostCentreBilling = {
   costCentre: string;
   totalBilling: number;
   employeeCount: number;
   averageRate: number;
+};
+
+type PerformanceData = {
+  costCentre: string;
+  monthlyData: {
+    month: string;
+    billing: number;
+    employees: number;
+    averageRate: number;
+  }[];
 };
 
 export default function Reports() {
@@ -28,6 +39,10 @@ export default function Reports() {
 
   const { data: costCentreBilling = [], isLoading: isLoadingBilling } = useQuery<CostCentreBilling[]>({
     queryKey: ['/api/reports/cost-centre-billing'],
+  });
+
+  const { data: performanceData = [], isLoading: isLoadingPerformance } = useQuery<PerformanceData[]>({
+    queryKey: ['/api/reports/cost-centre-performance'],
   });
 
   const handleDownloadReport = () => {
@@ -345,6 +360,35 @@ export default function Reports() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Performance Sparklines */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <BarChart3 className="w-5 h-5" />
+                <span>Performance Trends</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoadingPerformance ? (
+                <div className="text-center py-8">Loading performance data...</div>
+              ) : performanceData.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No performance data available.
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {performanceData.map((data) => (
+                    <InteractiveSparkline
+                      key={data.costCentre}
+                      data={data.monthlyData}
+                      costCentre={data.costCentre}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Billing Table */}
           <Card>
