@@ -161,6 +161,16 @@ export default function EmployeeTable({
               </TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort("startDate")}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>Start Date</span>
+                  {getSortIcon("startDate")}
+                </div>
+              </TableHead>
+              <TableHead>End Date</TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-gray-100"
                 onClick={() => onSort("appxBilling")}
               >
                 <div className="flex items-center space-x-1">
@@ -197,6 +207,12 @@ export default function EmployeeTable({
                   >
                     {employee.status === 'active' ? 'Active' : 'Inactive'}
                   </Badge>
+                </TableCell>
+                <TableCell className="text-sm text-gray-900">
+                  {employee.startDate || 'Not set'}
+                </TableCell>
+                <TableCell className="text-sm text-gray-900">
+                  {employee.endDate || 'Active'}
                 </TableCell>
                 <TableCell className="font-medium text-gray-900">
                   ${employee.appxBilling?.toLocaleString() || '0.00'}
