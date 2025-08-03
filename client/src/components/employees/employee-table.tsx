@@ -143,10 +143,19 @@ export default function EmployeeTable({
               </TableHead>
               <TableHead 
                 className="cursor-pointer hover:bg-gray-100"
-                onClick={() => onSort("cId")}
+                onClick={() => onSort("costCentre")}
               >
                 <div className="flex items-center space-x-1">
                   <span>Cost Centre</span>
+                  {getSortIcon("costCentre")}
+                </div>
+              </TableHead>
+              <TableHead 
+                className="cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort("cId")}
+              >
+                <div className="flex items-center space-x-1">
+                  <span>C-ID</span>
                   {getSortIcon("cId")}
                 </div>
               </TableHead>
@@ -202,13 +211,13 @@ export default function EmployeeTable({
                     </Avatar>
                     <div>
                       <div className="font-medium text-gray-900">{employee.name}</div>
-                      <div className="text-sm text-gray-500">{employee.cId || 'No ID'}</div>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell className="text-gray-900">{employee.role}</TableCell>
                 <TableCell className="text-gray-900">{employee.team}</TableCell>
-                <TableCell className="text-gray-900">{employee.cId || 'Not assigned'}</TableCell>
+                <TableCell className="text-gray-900">{employee.costCentre || 'Not Assigned'}</TableCell>
+                <TableCell className="text-gray-900">{employee.cId || 'Not Set'}</TableCell>
                 <TableCell className="text-gray-900">${employee.rate}</TableCell>
                 <TableCell>
                   <Badge 
