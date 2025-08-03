@@ -53,6 +53,15 @@ export default function Employees() {
     },
   });
 
+  const { data: teams = [] } = useQuery({
+    queryKey: ["/api/employees/teams"],
+    queryFn: async () => {
+      const response = await fetch("/api/employees/teams");
+      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
+      return response.json();
+    },
+  });
+
   const exportMutation = useMutation({
     mutationFn: async () => {
       const response = await fetch('/api/employees/export');
@@ -219,12 +228,11 @@ export default function Employees() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Teams</SelectItem>
-              <SelectItem value="Matrix">Matrix</SelectItem>
-              <SelectItem value="Trinity">Trinity</SelectItem>
-              <SelectItem value="Cyher">Cyher</SelectItem>
-              <SelectItem value="Neo">Neo</SelectItem>
-              <SelectItem value="Prisam">Prisam</SelectItem>
-              <SelectItem value="Morepheus">Morepheus</SelectItem>
+              {teams.map((team: string) => (
+                <SelectItem key={team} value={team}>
+                  {team}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           

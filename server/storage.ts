@@ -15,7 +15,7 @@ import {
   type InsertProject,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, like, and, or, desc, asc, sql, ne } from "drizzle-orm";
+import { eq, like, and, or, desc, asc, sql, ne, isNotNull, count, sum } from "drizzle-orm";
 
 export interface IStorage {
   // User operations for simple authentication
@@ -47,6 +47,7 @@ export interface IStorage {
     averageRate: number;
   }>;
   getTeamDistribution(): Promise<{ team: string; count: number }[]>;
+  getDistinctTeams(): Promise<string[]>;
 
   // Billing operations
   getBillingRates(): Promise<BillingRate[]>;
@@ -223,6 +224,19 @@ export class DatabaseStorage implements IStorage {
 
   async clearAllEmployees(): Promise<void> {
     await db.delete(employees);
+  }
+
+  async getDistinctTeams(): Promise<string[]> {
+    const result = await db
+      .selectDistinct({ team: employees.team })
+      .from(employees)
+      .where(and(
+        ne(employees.team, ""),
+        isNotNull(employees.team)
+      ))
+      .orderBy(employees.team);
+    
+    return result.map(row => row.team).filter(Boolean) as string[];
   }
 
   async getEmployeeStats(): Promise<{

@@ -87,6 +87,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get distinct teams (must come before /:id route)
+  app.get("/api/employees/teams", isAuthenticated, async (req, res) => {
+    try {
+      const teams = await storage.getDistinctTeams();
+      res.json(teams);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+      res.status(500).json({ message: "Failed to fetch teams" });
+    }
+  });
+
   app.get("/api/employees/:id", isAuthenticated, async (req, res) => {
     try {
       const employee = await storage.getEmployee(parseInt(req.params.id));
@@ -141,6 +152,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to clear employees" });
     }
   });
+
+
 
   // Dashboard stats
   app.get("/api/dashboard/stats", isAuthenticated, async (req, res) => {
