@@ -192,6 +192,7 @@ export class DatabaseStorage implements IStorage {
       name: employees.name,
       role: employees.role,
       team: employees.team,
+      costCentre: employees.costCentre,
       cId: employees.cId,
       status: employees.status,
       rate: employees.rate,
