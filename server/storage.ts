@@ -162,6 +162,9 @@ export class DatabaseStorage implements IStorage {
 
     if (status && status !== 'all') {
       conditions.push(eq(employees.status, status));
+    } else {
+      // By default, exclude deleted employees from regular listings
+      conditions.push(ne(employees.status, 'deleted'));
     }
 
     if (role && role !== 'all') {
@@ -283,7 +286,23 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEmployee(id: number): Promise<void> {
-    await db.delete(employees).where(eq(employees.id, id));
+    // Get employee info before marking as deleted
+    const [employee] = await db.select().from(employees).where(eq(employees.id, id));
+    
+    if (employee) {
+      // Mark employee as deleted instead of removing from database
+      await db
+        .update(employees)
+        .set({
+          status: 'deleted',
+          changesSummary: `Employee deleted: ${employee.name} (${employee.role || 'Unknown role'})`,
+          updatedAt: new Date()
+        })
+        .where(eq(employees.id, id));
+    } else {
+      // If employee not found, still delete to maintain API consistency
+      await db.delete(employees).where(eq(employees.id, id));
+    }
   }
 
   async clearAllEmployees(): Promise<void> {
@@ -296,7 +315,8 @@ export class DatabaseStorage implements IStorage {
       .from(employees)
       .where(and(
         ne(employees.team, ""),
-        isNotNull(employees.team)
+        isNotNull(employees.team),
+        ne(employees.status, 'deleted')
       ))
       .orderBy(employees.team);
     
@@ -309,7 +329,8 @@ export class DatabaseStorage implements IStorage {
       .from(employees)
       .where(and(
         ne(employees.costCentre, ""),
-        isNotNull(employees.costCentre)
+        isNotNull(employees.costCentre),
+        ne(employees.status, 'deleted')
       ))
       .orderBy(employees.costCentre);
     
@@ -331,7 +352,8 @@ export class DatabaseStorage implements IStorage {
         monthlyBilling: sql<number>`sum(case when status = 'active' then appx_billing else 0 end)`,
         averageRate: sql<number>`avg(case when status = 'active' and rate > 0 then rate else null end)`,
       })
-      .from(employees);
+      .from(employees)
+      .where(ne(employees.status, 'deleted'));
 
     return stats[0] || {
       total: 0,
