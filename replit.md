@@ -8,6 +8,7 @@ This is an Employee Billing Management System built as a full-stack web applicat
 - Updated CSV export format to match provided template with proper formatting:
   - SLNO, Name, Rate ($X.XX), Role, Cost-Centre, Team, C-ID, Start-Date, End-Date, Status (Active/Inactive), Band, SOW-ID, Appx Billing ($X,XXX.XX), Shift, Comments
 - Enhanced export functionality with proper number formatting and error handling
+- Fixed change reports to show newly added employees by setting changesSummary during employee creation
 
 # User Preferences
 
