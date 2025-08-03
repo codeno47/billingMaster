@@ -11,6 +11,8 @@ This is an Employee Billing Management System built as a full-stack web applicat
 - Fixed change reports to show newly added employees by setting changesSummary during employee creation
 - Enhanced delete functionality to track employee deletions in change reports instead of permanent removal
 - Modified employee queries to exclude deleted employees from regular listings while preserving deletion history
+- Added new monthly billing per cost centre report with comprehensive analytics and CSV export functionality
+- Implemented tabbed interface in reports page to separate change tracking and billing analysis
 
 # User Preferences
 

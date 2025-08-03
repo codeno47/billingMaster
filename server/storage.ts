@@ -440,6 +440,31 @@ export class DatabaseStorage implements IStorage {
       .limit(100);
   }
 
+  async getCostCentreBillingReport(): Promise<{ costCentre: string; totalBilling: number; employeeCount: number; averageRate: number }[]> {
+    const result = await db
+      .select({
+        costCentre: employees.costCentre,
+        totalBilling: sql<number>`sum(case when status = 'active' then appx_billing else 0 end)`,
+        employeeCount: sql<number>`count(case when status = 'active' then 1 else null end)`,
+        averageRate: sql<number>`avg(case when status = 'active' and rate > 0 then rate else null end)`
+      })
+      .from(employees)
+      .where(and(
+        isNotNull(employees.costCentre),
+        ne(employees.costCentre, ''),
+        ne(employees.status, 'deleted')
+      ))
+      .groupBy(employees.costCentre)
+      .orderBy(sql`sum(case when status = 'active' then appx_billing else 0 end) desc`);
+
+    return result.map(row => ({
+      costCentre: row.costCentre || 'Unknown',
+      totalBilling: Number(row.totalBilling) || 0,
+      employeeCount: Number(row.employeeCount) || 0,
+      averageRate: Number(row.averageRate) || 0
+    }));
+  }
+
   // Billing operations
   async getBillingRates(): Promise<BillingRate[]> {
     return await db.select().from(billingRates).orderBy(billingRates.band);

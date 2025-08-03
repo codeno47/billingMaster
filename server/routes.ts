@@ -258,6 +258,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/reports/cost-centre-billing", isAuthenticated, async (req, res) => {
+    try {
+      const costCentreBilling = await storage.getCostCentreBillingReport();
+      res.json(costCentreBilling);
+    } catch (error) {
+      console.error("Error fetching cost centre billing report:", error);
+      res.status(500).json({ message: "Failed to fetch cost centre billing report" });
+    }
+  });
+
   // Billing routes
   app.get("/api/billing/rates", isAuthenticated, async (req, res) => {
     try {
