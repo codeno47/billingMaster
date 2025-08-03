@@ -4,13 +4,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import EmployeeTable from "@/components/employees/employee-table";
 import EmployeeForm from "@/components/employees/employee-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Upload, Download } from "lucide-react";
+import { Plus, Upload, Download, Trash2 } from "lucide-react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 export default function Employees() {
@@ -112,6 +113,7 @@ export default function Employees() {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       toast({
         title: "Import successful",
         description: `Imported ${data.imported} employees. ${data.errors.length} errors.`,
@@ -132,6 +134,40 @@ export default function Employees() {
       toast({
         title: "Import failed",
         description: "Failed to import employee data",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const clearDataMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest('DELETE', '/api/employees');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/employees/teams"] });
+      toast({
+        title: "Data cleared",
+        description: "All employee data has been successfully cleared",
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Clear failed",
+        description: "Failed to clear employee data",
         variant: "destructive",
       });
     },
@@ -194,6 +230,34 @@ export default function Employees() {
                     Import CSV
                   </Button>
                 </div>
+
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline" className="text-red-600 border-red-300 hover:bg-red-50">
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Clear Data
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Clear All Employee Data?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This action will permanently delete all employee records from the database. 
+                        This cannot be undone. Are you sure you want to continue?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>No, Cancel</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => clearDataMutation.mutate()}
+                        disabled={clearDataMutation.isPending}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        Yes, Clear All Data
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                 
                 <Dialog open={showAddForm} onOpenChange={setShowAddForm}>
                   <DialogTrigger asChild>
