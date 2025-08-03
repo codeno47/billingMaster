@@ -30,6 +30,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
       role: employee?.role || "",
       team: employee?.team || "",
       rate: employee?.rate || "0.00",
+      costCentre: employee?.costCentre || "",
       cId: employee?.cId || "",
       startDate: employee?.startDate || "",
       endDate: employee?.endDate || "",
@@ -50,8 +51,8 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
       // Ensure rate and appxBilling are strings and properly formatted
       const formattedData = {
         ...data,
-        rate: typeof data.rate === 'number' ? data.rate.toString() : (data.rate || "0.00"),
-        appxBilling: typeof data.appxBilling === 'number' ? data.appxBilling.toString() : (data.appxBilling || "0.00"),
+        rate: data.rate ? data.rate.toString() : "0.00",
+        appxBilling: data.appxBilling ? data.appxBilling.toString() : "0.00",
       };
       
       const response = await apiRequest(method, url, formattedData);
@@ -109,15 +110,39 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
 
           <FormField
             control={form.control}
-            name="cId"
+            name="costCentre"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Cost Centre</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select cost centre" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">Not Assigned</SelectItem>
+                    <SelectItem value="MH-BYN">MH-BYN</SelectItem>
+                    <SelectItem value="MH-OPS">MH-OPS</SelectItem>
+                    <SelectItem value="EXR-OPS">EXR-OPS</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="cId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>C-ID</FormLabel>
                 <FormControl>
                   <Input 
                     {...field} 
                     value={field.value || ""}
-                    placeholder="e.g. MH-BYN, MH-OPS, EXR-OPS"
+                    placeholder="e.g. C74337, C51149"
                   />
                 </FormControl>
                 <FormMessage />

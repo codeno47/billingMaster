@@ -45,7 +45,8 @@ export const employees = pgTable("employees", {
   rate: decimal("rate", { precision: 10, scale: 2 }).default("0.00"),
   role: varchar("role"),
   team: varchar("team"),
-  cId: varchar("c_id"),
+  costCentre: varchar("cost_centre"), // Cost Centre (MH-BYN, MH-OPS, EXR-OPS)
+  cId: varchar("c_id"), // C-ID (C74337, C51149, etc.)
   startDate: varchar("start_date"),
   endDate: varchar("end_date"),
   status: varchar("status").notNull().default("inactive"), // 'active' or 'inactive'

@@ -167,7 +167,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (costCentre && costCentre !== 'all') {
-      conditions.push(eq(employees.cId, costCentre));
+      conditions.push(eq(employees.costCentre, costCentre));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -251,15 +251,15 @@ export class DatabaseStorage implements IStorage {
 
   async getDistinctCostCentres(): Promise<string[]> {
     const result = await db
-      .selectDistinct({ cId: employees.cId })
+      .selectDistinct({ costCentre: employees.costCentre })
       .from(employees)
       .where(and(
-        ne(employees.cId, ""),
-        isNotNull(employees.cId)
+        ne(employees.costCentre, ""),
+        isNotNull(employees.costCentre)
       ))
-      .orderBy(employees.cId);
+      .orderBy(employees.costCentre);
     
-    return result.map(row => row.cId).filter(Boolean) as string[];
+    return result.map(row => row.costCentre).filter(Boolean) as string[];
   }
 
   async getEmployeeStats(): Promise<{
@@ -353,7 +353,8 @@ export class DatabaseStorage implements IStorage {
           rate: row.Rate ? row.Rate.toString().replace('$', '').replace(',', '') : "0.00",
           role: row.Role,
           team: row.Team || 'NA',
-          cId: row['Cost-Centre'],
+          costCentre: row['Cost-Centre'],
+          cId: row['C-ID'],
           startDate: row['Start-Date'],
           endDate: row['End-Date'],
           status: row.Status?.toLowerCase() === 'active' ? 'active' : 'inactive',
