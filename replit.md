@@ -13,6 +13,7 @@ This is an Employee Billing Management System built as a full-stack web applicat
 - Modified employee queries to exclude deleted employees from regular listings while preserving deletion history
 - Added new monthly billing per cost centre report with comprehensive analytics and CSV export functionality
 - Implemented tabbed interface in reports page to separate change tracking and billing analysis
+- Created comprehensive use case testing document (USE_CASES.md) covering all application functionality, user roles, and edge cases
 
 # User Preferences
 
