@@ -61,6 +61,7 @@ const formSchema = insertEmployeeSchema.extend({
   shift: z.string().min(1, "Shift is required"),
   status: z.string().min(1, "Status is required"),
   team: z.string().min(1, "Team is required"),
+  comments: z.string().max(256, "Comments must not exceed 256 characters").optional(),
 }).refine((data) => {
   if (!data.startDate || !data.endDate || data.endDate.trim() === "") return true;
   
@@ -429,10 +430,19 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
           name="comments"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Comments</FormLabel>
+              <FormLabel>Comments (max 256 characters)</FormLabel>
               <FormControl>
-                <Textarea {...field} value={field.value || ""} />
+                <Textarea 
+                  {...field} 
+                  value={field.value || ""} 
+                  maxLength={256}
+                  placeholder="Enter any additional comments or notes about the employee..."
+                  className="resize-none"
+                />
               </FormControl>
+              <div className="text-sm text-gray-500">
+                {(field.value || "").length}/256 characters
+              </div>
               <FormMessage />
             </FormItem>
           )}

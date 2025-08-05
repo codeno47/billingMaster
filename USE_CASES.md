@@ -77,12 +77,16 @@ This document provides comprehensive test scenarios for the Employee Billing Man
    - Try "32-13-2025" (invalid day/month)
    - Try "15/01/2025" (wrong format)
    - Try end date before start date
-6. Click Save with valid data
+6. Test comments field validation:
+   - Enter more than 256 characters in comments
+   - Observe character count and validation
+7. Click Save with valid data
 **Expected Result**: 
 - Form prevents submission when required fields are empty
 - Clear error messages for missing mandatory fields
 - Date validation prevents invalid formats and non-existent dates
 - Cross-field validation ensures start date is before end date
+- Comments field enforces 256 character limit with real-time count
 - Employee added successfully only after all validations pass
 - Success message appears and employee appears in list
 

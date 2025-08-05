@@ -24,6 +24,7 @@ This is an Employee Billing Management System built as a full-stack web applicat
 - Added visual indicators for mandatory fields with asterisks and improved error messaging
 - Implemented comprehensive date validation for DD-MM-YYYY format with invalid date rejection
 - Added cross-field validation to ensure start date is before end date
+- Added character limit validation for comments field (256 characters max) with real-time character count
 
 # User Preferences
 
