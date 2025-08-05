@@ -198,15 +198,18 @@ function SettingsContent() {
 
   const updateMutation = useMutation({
     mutationFn: async ({ endpoint, id, data }: { endpoint: string; id: number; data: any }) => {
+      console.log("Frontend updating:", endpoint, id, data);
       return await apiRequest(`${endpoint}/${id}`, "PUT", data);
     },
-    onSuccess: (_, { endpoint }) => {
+    onSuccess: (result, { endpoint }) => {
+      console.log("Update successful:", result);
       queryClient.invalidateQueries({ queryKey: [endpoint] });
       setIsDialogOpen(false);
       setEditingItem(null);
       toast({ title: "Success", description: "Item updated successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Update failed:", error);
       toast({ title: "Error", description: "Failed to update item", variant: "destructive" });
     },
   });
