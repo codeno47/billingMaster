@@ -181,19 +181,38 @@ This document provides comprehensive test scenarios for the Employee Billing Man
 
 ### 5. Billing Management Testing
 
-#### UC-5.1: View Billing Dashboard
-**Objective**: Test billing overview
+#### UC-5.1: View Billing Dashboard with Filtering
+**Objective**: Test billing overview and filtering capabilities
 **Steps**:
 1. Navigate to Billing section
-2. Review billing statistics and charts
-**Expected Result**: Shows total billing amounts, cost centre breakdowns, and rate distributions
+2. Review billing statistics and charts in summary cards
+3. Test filtering functionality:
+   - Search for specific employees by name
+   - Filter by team, cost centre, status
+   - Filter by rate ranges ($25-35, $35-45, $45+)
+   - Use multiple filters simultaneously
+4. Test sorting by clicking column headers (Name, Rate, Monthly Billing)
+5. Test pagination controls and records per page options
+6. Use "Reset Filters" button to clear all filters
+**Expected Result**: 
+- Shows total billing amounts, cost centre breakdowns, and rate distributions
+- Filters work correctly and show active filter count
+- Sorting toggles between ascending and descending
+- Pagination displays correct page numbers and navigation
+- Reset button clears all applied filters
 
-#### UC-5.2: Billing Calculations
-**Objective**: Verify billing calculations are accurate
+#### UC-5.2: Billing Calculations and Pagination
+**Objective**: Verify billing calculations are accurate and test pagination
 **Steps**:
 1. Check employee with known rate and hours
 2. Verify billing calculation (Rate × Hours × 160 hours/month for full-time)
-**Expected Result**: Calculations match expected values
+3. Test pagination with different page sizes (10, 25, 50, 100)
+4. Navigate through multiple pages of billing data
+**Expected Result**: 
+- Calculations match expected values
+- Data displays correctly across different page sizes
+- Total count shows accurate employee numbers
+- Page navigation works smoothly
 
 ### 6. Reports and Analytics Testing
 
