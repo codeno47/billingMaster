@@ -22,6 +22,8 @@ This is an Employee Billing Management System built as a full-stack web applicat
 - Fixed export functionality to respect applied filters and export only visible filtered records instead of entire dataset
 - Enhanced employee form validation to enforce required fields (Name, Cost Centre, Start Date, Shift, Status, Team)
 - Added visual indicators for mandatory fields with asterisks and improved error messaging
+- Implemented comprehensive date validation for DD-MM-YYYY format with invalid date rejection
+- Added cross-field validation to ensure start date is before end date
 
 # User Preferences
 

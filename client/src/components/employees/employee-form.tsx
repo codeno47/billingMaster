@@ -17,16 +17,66 @@ interface EmployeeFormProps {
   onSuccess: () => void;
 }
 
-// Enhanced form schema with required field validation
+// Enhanced form schema with required field validation and date validation
 const formSchema = insertEmployeeSchema.extend({
   name: z.string().min(1, "Name is required"),
   costCentre: z.string().min(1, "Cost Centre is required").refine(val => val !== 'none', {
     message: "Please select a Cost Centre"
   }),
-  startDate: z.string().min(1, "Start Date is required"),
+  startDate: z.string().min(1, "Start Date is required").refine((date) => {
+    if (!date) return false;
+    // Check if date is in DD-MM-YYYY format
+    const dateRegex = /^(\d{2})-(\d{2})-(\d{4})$/;
+    const match = date.match(dateRegex);
+    if (!match) return false;
+    
+    const [, day, month, year] = match;
+    const parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    
+    // Check if the date is valid and matches the input
+    return parsedDate.getDate() === parseInt(day) &&
+           parsedDate.getMonth() === parseInt(month) - 1 &&
+           parsedDate.getFullYear() === parseInt(year);
+  }, {
+    message: "Please enter a valid date in DD-MM-YYYY format"
+  }),
+  endDate: z.string().optional().refine((date) => {
+    if (!date || date.trim() === "") return true; // End date is optional
+    
+    // Check if date is in DD-MM-YYYY format
+    const dateRegex = /^(\d{2})-(\d{2})-(\d{4})$/;
+    const match = date.match(dateRegex);
+    if (!match) return false;
+    
+    const [, day, month, year] = match;
+    const parsedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    
+    // Check if the date is valid and matches the input
+    return parsedDate.getDate() === parseInt(day) &&
+           parsedDate.getMonth() === parseInt(month) - 1 &&
+           parsedDate.getFullYear() === parseInt(year);
+  }, {
+    message: "Please enter a valid date in DD-MM-YYYY format"
+  }),
   shift: z.string().min(1, "Shift is required"),
   status: z.string().min(1, "Status is required"),
   team: z.string().min(1, "Team is required"),
+}).refine((data) => {
+  if (!data.startDate || !data.endDate || data.endDate.trim() === "") return true;
+  
+  // Parse both dates for comparison
+  const parseDate = (dateStr: string) => {
+    const [day, month, year] = dateStr.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+  };
+  
+  const startDate = parseDate(data.startDate);
+  const endDate = parseDate(data.endDate);
+  
+  return startDate < endDate;
+}, {
+  message: "End date must be after start date",
+  path: ["endDate"]
 });
 
 export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
@@ -340,7 +390,13 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
               <FormItem>
                 <FormLabel>Start Date *</FormLabel>
                 <FormControl>
-                  <Input {...field} value={field.value || ""} placeholder="DD-MM-YYYY" />
+                  <Input 
+                    {...field} 
+                    value={field.value || ""} 
+                    placeholder="DD-MM-YYYY (e.g., 15-01-2025)" 
+                    pattern="[0-9]{2}-[0-9]{2}-[0-9]{4}"
+                    title="Please enter date in DD-MM-YYYY format"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -354,7 +410,13 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
               <FormItem>
                 <FormLabel>End Date</FormLabel>
                 <FormControl>
-                  <Input {...field} value={field.value || ""} placeholder="DD-MM-YYYY" />
+                  <Input 
+                    {...field} 
+                    value={field.value || ""} 
+                    placeholder="DD-MM-YYYY (e.g., 31-12-2025) - Optional" 
+                    pattern="[0-9]{2}-[0-9]{2}-[0-9]{4}"
+                    title="Please enter date in DD-MM-YYYY format"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

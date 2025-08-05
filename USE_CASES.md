@@ -68,16 +68,22 @@ This document provides comprehensive test scenarios for the Employee Billing Man
 4. Fill out the form with all required fields:
    - Name: "John Doe" (required)
    - Cost Centre: "MH-BYN" (required)
-   - Start Date: Current date (required)
+   - Start Date: "15-01-2025" in DD-MM-YYYY format (required)
    - Status: Active (required)
    - Team: "Alpha" (required)
    - Shift: "9 AM - 6 PM" (required)
    - Optional fields: Role, Rate, C-ID, Band, SOW ID, Comments
-5. Click Save
+5. Test invalid date formats:
+   - Try "32-13-2025" (invalid day/month)
+   - Try "15/01/2025" (wrong format)
+   - Try end date before start date
+6. Click Save with valid data
 **Expected Result**: 
 - Form prevents submission when required fields are empty
 - Clear error messages for missing mandatory fields
-- Employee added successfully only after all required fields are filled
+- Date validation prevents invalid formats and non-existent dates
+- Cross-field validation ensures start date is before end date
+- Employee added successfully only after all validations pass
 - Success message appears and employee appears in list
 
 #### UC-3.3: Edit Employee
