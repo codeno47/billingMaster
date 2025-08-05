@@ -114,7 +114,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Export employees (must come before /:id route)
   app.get("/api/employees/export", isAuthenticated, async (req, res) => {
     try {
-      const { employees } = await storage.getEmployees({ limit: 10000 });
+      // Use the same filtering logic as the main employee list
+      const {
+        search,
+        team,
+        status,
+        role,
+        costCentre,
+        sortBy = 'name',
+        sortOrder = 'asc'
+      } = req.query;
+
+      // Get filtered employees using the same parameters as the main listing
+      const { employees } = await storage.getEmployees({
+        search,
+        team,
+        status,
+        role,
+        costCentre,
+        offset: 0,
+        limit: 10000, // Export all matching records
+        sortBy,
+        sortOrder
+      });
       
       // Convert to CSV format matching the provided template
       const headers = [
@@ -156,8 +178,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
       ].join('\n');
 
+      // Generate filename with filter indication
+      const hasFilters = search || (team && team !== 'all') || (status && status !== 'all') || 
+                        (role && role !== 'all') || (costCentre && costCentre !== 'all');
+      const filename = hasFilters ? 'employees_filtered_export.csv' : 'employees_export.csv';
+
       res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename=employees_export.csv');
+      res.setHeader('Content-Disposition', `attachment; filename=${filename}`);
       res.send(csvContent);
     } catch (error) {
       console.error("Error exporting employees:", error);

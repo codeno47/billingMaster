@@ -75,22 +75,39 @@ export default function Employees() {
 
   const exportMutation = useMutation({
     mutationFn: async () => {
-      const response = await fetch('/api/employees/export');
+      // Include current filters in the export request
+      const params = new URLSearchParams({
+        ...filters,
+        sortBy: sortConfig.sortBy,
+        sortOrder: sortConfig.sortOrder,
+      });
+      
+      const response = await fetch(`/api/employees/export?${params}`);
       if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
+      
+      // Generate filename based on applied filters
+      const filterSuffix = hasActiveFilters() ? '_filtered' : '';
+      const timestamp = new Date().toISOString().slice(0, 10);
+      a.download = `employees${filterSuffix}_${timestamp}.csv`;
+      
       a.href = url;
-      a.download = 'employees.csv';
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     },
     onSuccess: () => {
+      const filterCount = getActiveFilterCount();
+      const description = filterCount > 0 
+        ? `Exported ${employeesData?.total || 0} filtered employee records to CSV`
+        : `Exported ${employeesData?.total || 0} employee records to CSV`;
+      
       toast({
         title: "Export successful",
-        description: "Employee data has been exported to CSV",
+        description,
       });
     },
     onError: (error) => {

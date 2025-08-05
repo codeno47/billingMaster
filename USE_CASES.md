@@ -117,13 +117,22 @@ This document provides comprehensive test scenarios for the Employee Billing Man
 ### 4. CSV Import/Export Testing
 
 #### UC-4.1: CSV Export
-**Objective**: Test data export functionality
+**Objective**: Test data export functionality with filter respect
 **Steps**:
 1. Navigate to Employees section
-2. Click "Export CSV" button
-**Expected Result**: CSV file downloads with proper formatting:
-- Headers: SLNO, Name, Rate ($X.XX), Role, Cost-Centre, Team, C-ID, Start-Date, End-Date, Status, Band, SOW-ID, Appx Billing ($X,XXX.XX), Shift, Comments
-- Currency formatting applied correctly
+2. Apply various filters (e.g., specific team, status, role)
+3. Note the number of filtered records displayed
+4. Click "Export CSV" button
+5. Download and open CSV file
+6. Reset filters and export again for comparison
+**Expected Result**: 
+- CSV file downloads with proper formatting:
+  - Headers: SLNO, Name, Rate ($X.XX), Role, Cost-Centre, Team, C-ID, Start-Date, End-Date, Status, Band, SOW-ID, Appx Billing ($X,XXX.XX), Shift, Comments
+  - Currency formatting applied correctly
+- When filters are applied, export contains only visible filtered records
+- When no filters applied, export contains all employee data
+- Filename indicates if data is filtered (_filtered suffix)
+- Toast message shows count of exported records
 
 #### UC-4.2: CSV Import
 **Objective**: Test bulk employee import

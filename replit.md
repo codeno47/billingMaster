@@ -19,6 +19,7 @@ This is an Employee Billing Management System built as a full-stack web applicat
 - Enhanced security with rolling session expiry that resets on user activity
 - Added "Reset Filters" button to Employee module for clearing all applied filters at once
 - Enhanced filter UI with active filter count indicator and improved organization
+- Fixed export functionality to respect applied filters and export only visible filtered records instead of entire dataset
 
 # User Preferences
 
