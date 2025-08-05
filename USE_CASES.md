@@ -68,7 +68,7 @@ This document provides comprehensive test scenarios for the Employee Billing Man
 4. Fill out the form with all required fields:
    - Name: "John Doe" (required)
    - Cost Centre: "MH-BYN" (required)
-   - Start Date: "15-01-2025" in DD-MM-YYYY format (required)
+   - Start Date: Use calendar picker to select date (required)
    - Status: Active (required)
    - Team: "Alpha" (required)
    - Shift: "9 AM - 6 PM" (required)
@@ -77,13 +77,20 @@ This document provides comprehensive test scenarios for the Employee Billing Man
    - Try "32-13-2025" (invalid day/month)
    - Try "15/01/2025" (wrong format)
    - Try end date before start date
-6. Test comments field validation:
+6. Test date picker functionality:
+   - Click on Start Date field to open calendar
+   - Select a date from the calendar
+   - Click on End Date field and select a date after start date
+   - Verify dates are displayed in DD-MM-YYYY format
+7. Test comments field validation:
    - Enter more than 256 characters in comments
    - Observe character count and validation
-7. Click Save with valid data
+8. Click Save with valid data
 **Expected Result**: 
 - Form prevents submission when required fields are empty
 - Clear error messages for missing mandatory fields
+- Date picker provides intuitive calendar interface for date selection
+- Selected dates automatically format to DD-MM-YYYY
 - Date validation prevents invalid formats and non-existent dates
 - Cross-field validation ensures start date is before end date
 - Comments field enforces 256 character limit with real-time count

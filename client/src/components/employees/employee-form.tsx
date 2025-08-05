@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
@@ -391,12 +392,10 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
               <FormItem>
                 <FormLabel>Start Date *</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    value={field.value || ""} 
-                    placeholder="DD-MM-YYYY (e.g., 15-01-2025)" 
-                    pattern="[0-9]{2}-[0-9]{2}-[0-9]{4}"
-                    title="Please enter date in DD-MM-YYYY format"
+                  <DatePicker
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    placeholder="Select start date"
                   />
                 </FormControl>
                 <FormMessage />
@@ -411,12 +410,10 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
               <FormItem>
                 <FormLabel>End Date</FormLabel>
                 <FormControl>
-                  <Input 
-                    {...field} 
-                    value={field.value || ""} 
-                    placeholder="DD-MM-YYYY (e.g., 31-12-2025) - Optional" 
-                    pattern="[0-9]{2}-[0-9]{2}-[0-9]{4}"
-                    title="Please enter date in DD-MM-YYYY format"
+                  <DatePicker
+                    value={field.value || ""}
+                    onChange={field.onChange}
+                    placeholder="Select end date (optional)"
                   />
                 </FormControl>
                 <FormMessage />
