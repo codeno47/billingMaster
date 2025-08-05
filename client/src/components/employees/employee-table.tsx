@@ -222,7 +222,7 @@ export default function EmployeeTable({
                 <TableCell>
                   <Badge 
                     variant={employee.status === 'active' ? 'default' : 'secondary'}
-                    className={employee.status === 'active' ? 'bg-success text-white' : 'bg-gray-400 text-white'}
+                    className={employee.status === 'active' ? 'bg-green-600 text-white' : 'bg-gray-500 text-white'}
                   >
                     {employee.status === 'active' ? 'Active' : 'Inactive'}
                   </Badge>

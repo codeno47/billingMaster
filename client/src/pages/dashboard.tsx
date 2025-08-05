@@ -182,9 +182,9 @@ export default function Dashboard() {
                         <span className="text-xs text-gray-500">{employee.team}</span>
                         <Badge 
                           variant={employee.status === 'active' ? 'default' : 'secondary'}
-                          className="text-xs"
+                          className={`text-xs ${employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}
                         >
-                          {employee.status}
+                          {employee.status === 'active' ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
                       {employee.changesSummary && (
