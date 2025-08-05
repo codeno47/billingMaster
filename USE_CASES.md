@@ -60,24 +60,25 @@ This document provides comprehensive test scenarios for the Employee Billing Man
 **Expected Result**: Displays all active employees with pagination, search, and filter options
 
 #### UC-3.2: Add New Employee
-**Objective**: Test employee creation
+**Objective**: Test employee creation and form validation
 **Steps**:
 1. Click "Add Employee" button
-2. Fill out the form:
-   - Name: "John Doe"
-   - Role: "Software Engineer"
-   - Rate: "75.00"
-   - Cost Centre: "Engineering"
-   - Team: "Backend"
-   - C-ID: "ENG001"
-   - Start Date: Current date
-   - Status: Active
-   - Band: "L3"
-   - SOW ID: "SOW-2025-001"
-   - Shift: "Day"
-   - Comments: "New hire for Q1 project"
-3. Click Save
-**Expected Result**: Employee added successfully, appears in employee list
+2. Try to submit form with empty fields
+3. Verify validation error messages appear for required fields (Name*, Cost Centre*, Start Date*, Shift*, Status*, Team*)
+4. Fill out the form with all required fields:
+   - Name: "John Doe" (required)
+   - Cost Centre: "MH-BYN" (required)
+   - Start Date: Current date (required)
+   - Status: Active (required)
+   - Team: "Alpha" (required)
+   - Shift: "9 AM - 6 PM" (required)
+   - Optional fields: Role, Rate, C-ID, Band, SOW ID, Comments
+5. Click Save
+**Expected Result**: 
+- Form prevents submission when required fields are empty
+- Clear error messages for missing mandatory fields
+- Employee added successfully only after all required fields are filled
+- Success message appears and employee appears in list
 
 #### UC-3.3: Edit Employee
 **Objective**: Test employee modification

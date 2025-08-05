@@ -17,7 +17,17 @@ interface EmployeeFormProps {
   onSuccess: () => void;
 }
 
-const formSchema = insertEmployeeSchema;
+// Enhanced form schema with required field validation
+const formSchema = insertEmployeeSchema.extend({
+  name: z.string().min(1, "Name is required"),
+  costCentre: z.string().min(1, "Cost Centre is required").refine(val => val !== 'none', {
+    message: "Please select a Cost Centre"
+  }),
+  startDate: z.string().min(1, "Start Date is required"),
+  shift: z.string().min(1, "Shift is required"),
+  status: z.string().min(1, "Status is required"),
+  team: z.string().min(1, "Team is required"),
+});
 
 export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps) {
   const { toast } = useToast();
@@ -40,11 +50,11 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
       role: employee?.role || "",
       team: employee?.team || "",
       rate: employee?.rate || "0.00",
-      costCentre: employee?.costCentre || "none",
+      costCentre: employee?.costCentre || "",
       cId: employee?.cId || "",
       startDate: employee?.startDate || "",
       endDate: employee?.endDate || "",
-      status: employee?.status || "inactive",
+      status: employee?.status || "",
       band: employee?.band || "",
       sowId: employee?.sowId || "",
       appxBilling: employee?.appxBilling || "0.00",
@@ -63,7 +73,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
         ...data,
         rate: data.rate ? data.rate.toString() : "0.00",
         appxBilling: data.appxBilling ? data.appxBilling.toString() : "0.00",
-        costCentre: data.costCentre === 'none' ? '' : data.costCentre,
+        costCentre: data.costCentre || '',
       };
       
       const response = await apiRequest(method, url, formattedData);
@@ -124,15 +134,14 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             name="costCentre"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Cost Centre</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                <FormLabel>Cost Centre *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select cost centre" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="none">Not Assigned</SelectItem>
                     <SelectItem value="MH-BYN">MH-BYN</SelectItem>
                     <SelectItem value="MH-OPS">MH-OPS</SelectItem>
                     <SelectItem value="EXR-OPS">EXR-OPS</SelectItem>
@@ -190,8 +199,8 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             name="team"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Team</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                <FormLabel>Team *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select team" />
@@ -229,11 +238,11 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                <FormLabel>Status *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -306,8 +315,8 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             name="shift"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Shift</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value || ""}>
+                <FormLabel>Shift *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Select shift" />
@@ -329,7 +338,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
             name="startDate"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Start Date</FormLabel>
+                <FormLabel>Start Date *</FormLabel>
                 <FormControl>
                   <Input {...field} value={field.value || ""} placeholder="DD-MM-YYYY" />
                 </FormControl>
