@@ -3,6 +3,11 @@ import {
   employees,
   billingRates,
   projects,
+  costCentres,
+  bands,
+  shifts,
+  roles,
+  teams,
   type User,
   type InsertUser,
   type LoginRequest,
@@ -13,6 +18,21 @@ import {
   type InsertBillingRate,
   type Project,
   type InsertProject,
+  type CostCentre,
+  type InsertCostCentre,
+  type UpdateCostCentre,
+  type Band,
+  type InsertBand,
+  type UpdateBand,
+  type Shift,
+  type InsertShift,
+  type UpdateShift,
+  type Role,
+  type InsertRole,
+  type UpdateRole,
+  type Team,
+  type InsertTeam,
+  type UpdateTeam,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, like, ilike, and, or, desc, asc, sql, ne, isNotNull, isNull, count, sum } from "drizzle-orm";
@@ -72,6 +92,35 @@ export interface IStorage {
   // Reports
   getCostCentreBillingReport(): Promise<{ costCentre: string; totalBilling: number; employeeCount: number; averageRate: number }[]>;
   getCostCentrePerformanceData(): Promise<{ costCentre: string; monthlyData: { month: string; billing: number; employees: number; averageRate: number }[] }[]>;
+
+  // Configuration operations
+  getCostCentres(): Promise<CostCentre[]>;
+  createCostCentre(costCentre: InsertCostCentre): Promise<CostCentre>;
+  updateCostCentre(id: number, costCentre: UpdateCostCentre): Promise<CostCentre>;
+  deleteCostCentre(id: number): Promise<void>;
+
+  getBands(): Promise<Band[]>;
+  createBand(band: InsertBand): Promise<Band>;
+  updateBand(id: number, band: UpdateBand): Promise<Band>;
+  deleteBand(id: number): Promise<void>;
+
+  getShifts(): Promise<Shift[]>;
+  createShift(shift: InsertShift): Promise<Shift>;
+  updateShift(id: number, shift: UpdateShift): Promise<Shift>;
+  deleteShift(id: number): Promise<void>;
+
+  getRoles(): Promise<Role[]>;
+  createRole(role: InsertRole): Promise<Role>;
+  updateRole(id: number, role: UpdateRole): Promise<Role>;
+  deleteRole(id: number): Promise<void>;
+
+  getTeams(): Promise<Team[]>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  updateTeam(id: number, team: UpdateTeam): Promise<Team>;
+  deleteTeam(id: number): Promise<void>;
+
+  // Initialize configuration data
+  initializeConfigurationData(): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -609,6 +658,209 @@ export class DatabaseStorage implements IStorage {
     }
 
     return { imported, errors };
+  }
+
+  // Configuration operations
+  async getCostCentres(): Promise<CostCentre[]> {
+    return await db.select().from(costCentres).where(eq(costCentres.isActive, true)).orderBy(costCentres.code);
+  }
+
+  async createCostCentre(costCentreData: InsertCostCentre): Promise<CostCentre> {
+    const [costCentre] = await db
+      .insert(costCentres)
+      .values({ ...costCentreData, updatedAt: new Date() })
+      .returning();
+    return costCentre;
+  }
+
+  async updateCostCentre(id: number, costCentreData: UpdateCostCentre): Promise<CostCentre> {
+    const [costCentre] = await db
+      .update(costCentres)
+      .set({ ...costCentreData, updatedAt: new Date() })
+      .where(eq(costCentres.id, id))
+      .returning();
+    return costCentre;
+  }
+
+  async deleteCostCentre(id: number): Promise<void> {
+    await db
+      .update(costCentres)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(costCentres.id, id));
+  }
+
+  async getBands(): Promise<Band[]> {
+    return await db.select().from(bands).where(eq(bands.isActive, true)).orderBy(bands.level);
+  }
+
+  async createBand(bandData: InsertBand): Promise<Band> {
+    const [band] = await db
+      .insert(bands)
+      .values({ ...bandData, updatedAt: new Date() })
+      .returning();
+    return band;
+  }
+
+  async updateBand(id: number, bandData: UpdateBand): Promise<Band> {
+    const [band] = await db
+      .update(bands)
+      .set({ ...bandData, updatedAt: new Date() })
+      .where(eq(bands.id, id))
+      .returning();
+    return band;
+  }
+
+  async deleteBand(id: number): Promise<void> {
+    await db
+      .update(bands)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(bands.id, id));
+  }
+
+  async getShifts(): Promise<Shift[]> {
+    return await db.select().from(shifts).where(eq(shifts.isActive, true)).orderBy(shifts.name);
+  }
+
+  async createShift(shiftData: InsertShift): Promise<Shift> {
+    const [shift] = await db
+      .insert(shifts)
+      .values({ ...shiftData, updatedAt: new Date() })
+      .returning();
+    return shift;
+  }
+
+  async updateShift(id: number, shiftData: UpdateShift): Promise<Shift> {
+    const [shift] = await db
+      .update(shifts)
+      .set({ ...shiftData, updatedAt: new Date() })
+      .where(eq(shifts.id, id))
+      .returning();
+    return shift;
+  }
+
+  async deleteShift(id: number): Promise<void> {
+    await db
+      .update(shifts)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(shifts.id, id));
+  }
+
+  async getRoles(): Promise<Role[]> {
+    return await db.select().from(roles).where(eq(roles.isActive, true)).orderBy(roles.title);
+  }
+
+  async createRole(roleData: InsertRole): Promise<Role> {
+    const [role] = await db
+      .insert(roles)
+      .values({ ...roleData, updatedAt: new Date() })
+      .returning();
+    return role;
+  }
+
+  async updateRole(id: number, roleData: UpdateRole): Promise<Role> {
+    const [role] = await db
+      .update(roles)
+      .set({ ...roleData, updatedAt: new Date() })
+      .where(eq(roles.id, id))
+      .returning();
+    return role;
+  }
+
+  async deleteRole(id: number): Promise<void> {
+    await db
+      .update(roles)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(roles.id, id));
+  }
+
+  async getTeams(): Promise<Team[]> {
+    return await db.select().from(teams).where(eq(teams.isActive, true)).orderBy(teams.name);
+  }
+
+  async createTeam(teamData: InsertTeam): Promise<Team> {
+    const [team] = await db
+      .insert(teams)
+      .values({ ...teamData, updatedAt: new Date() })
+      .returning();
+    return team;
+  }
+
+  async updateTeam(id: number, teamData: UpdateTeam): Promise<Team> {
+    const [team] = await db
+      .update(teams)
+      .set({ ...teamData, updatedAt: new Date() })
+      .where(eq(teams.id, id))
+      .returning();
+    return team;
+  }
+
+  async deleteTeam(id: number): Promise<void> {
+    await db
+      .update(teams)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(teams.id, id));
+  }
+
+  async initializeConfigurationData(): Promise<void> {
+    // Initialize default cost centres
+    const existingCostCentres = await db.select().from(costCentres);
+    if (existingCostCentres.length === 0) {
+      await db.insert(costCentres).values([
+        { code: "MH-BYN", name: "Mumbai - Borivali", description: "Mumbai Borivali office operations" },
+        { code: "MH-OPS", name: "Mumbai - Operations", description: "Mumbai operations center" },
+        { code: "EXR-OPS", name: "External - Operations", description: "External operations and support" },
+      ]);
+    }
+
+    // Initialize default bands
+    const existingBands = await db.select().from(bands);
+    if (existingBands.length === 0) {
+      await db.insert(bands).values([
+        { level: "B1", name: "Junior", minRate: "25.00", maxRate: "35.00" },
+        { level: "B2", name: "Senior", minRate: "35.00", maxRate: "45.00" },
+        { level: "B3", name: "Lead", minRate: "45.00", maxRate: "60.00" },
+        { level: "B4", name: "Principal", minRate: "60.00", maxRate: "80.00" },
+      ]);
+    }
+
+    // Initialize default shifts
+    const existingShifts = await db.select().from(shifts);
+    if (existingShifts.length === 0) {
+      await db.insert(shifts).values([
+        { name: "Day Shift", startTime: "09:00", endTime: "18:00", timezone: "IST" },
+        { name: "Night Shift", startTime: "22:00", endTime: "07:00", timezone: "IST" },
+        { name: "US Shift", startTime: "19:00", endTime: "04:00", timezone: "EST" },
+        { name: "UK Shift", startTime: "13:30", endTime: "22:30", timezone: "GMT" },
+      ]);
+    }
+
+    // Initialize default roles
+    const existingRoles = await db.select().from(roles);
+    if (existingRoles.length === 0) {
+      await db.insert(roles).values([
+        { title: "Software Engineer", department: "Engineering", level: "Individual Contributor" },
+        { title: "Senior Software Engineer", department: "Engineering", level: "Individual Contributor" },
+        { title: "Team Lead", department: "Engineering", level: "Management" },
+        { title: "Technical Architect", department: "Engineering", level: "Individual Contributor" },
+        { title: "DevOps Engineer", department: "Engineering", level: "Individual Contributor" },
+        { title: "QA Engineer", department: "Quality Assurance", level: "Individual Contributor" },
+        { title: "Business Analyst", department: "Operations", level: "Individual Contributor" },
+        { title: "Project Manager", department: "Operations", level: "Management" },
+      ]);
+    }
+
+    // Initialize default teams
+    const existingTeams = await db.select().from(teams);
+    if (existingTeams.length === 0) {
+      await db.insert(teams).values([
+        { name: "Frontend Development", department: "Engineering", manager: "Tech Lead" },
+        { name: "Backend Development", department: "Engineering", manager: "Tech Lead" },
+        { name: "DevOps & Infrastructure", department: "Engineering", manager: "Senior Engineer" },
+        { name: "Quality Assurance", department: "Quality Assurance", manager: "QA Lead" },
+        { name: "Business Analysis", department: "Operations", manager: "Senior BA" },
+        { name: "Project Management", department: "Operations", manager: "PM Lead" },
+      ]);
+    }
   }
 }
 

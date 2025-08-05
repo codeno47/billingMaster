@@ -80,6 +80,59 @@ export const projects = pgTable("projects", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Configuration tables for settings module
+export const costCentres = pgTable("cost_centres", {
+  id: serial("id").primaryKey(),
+  code: varchar("code").notNull().unique(),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const bands = pgTable("bands", {
+  id: serial("id").primaryKey(),
+  level: varchar("level").notNull().unique(),
+  name: varchar("name").notNull(),
+  minRate: decimal("min_rate", { precision: 10, scale: 2 }),
+  maxRate: decimal("max_rate", { precision: 10, scale: 2 }),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const shifts = pgTable("shifts", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull().unique(),
+  startTime: varchar("start_time"),
+  endTime: varchar("end_time"),
+  timezone: varchar("timezone"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  title: varchar("title").notNull().unique(),
+  department: varchar("department"),
+  level: varchar("level"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const teams = pgTable("teams", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull().unique(),
+  department: varchar("department"),
+  manager: varchar("manager"),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -114,6 +167,44 @@ export const insertProjectSchema = createInsertSchema(projects).omit({
   createdAt: true,
 });
 
+// Configuration insert schemas
+export const insertCostCentreSchema = createInsertSchema(costCentres).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertBandSchema = createInsertSchema(bands).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertShiftSchema = createInsertSchema(shifts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertTeamSchema = createInsertSchema(teams).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Update schemas
+export const updateCostCentreSchema = insertCostCentreSchema.partial();
+export const updateBandSchema = insertBandSchema.partial();
+export const updateShiftSchema = insertShiftSchema.partial();
+export const updateRoleSchema = insertRoleSchema.partial();
+export const updateTeamSchema = insertTeamSchema.partial();
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
@@ -123,5 +214,26 @@ export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 export type UpdateEmployee = z.infer<typeof updateEmployeeSchema>;
 export type BillingRate = typeof billingRates.$inferSelect;
 export type InsertBillingRate = z.infer<typeof insertBillingRateSchema>;
+
+// Configuration types
+export type CostCentre = typeof costCentres.$inferSelect;
+export type InsertCostCentre = z.infer<typeof insertCostCentreSchema>;
+export type UpdateCostCentre = z.infer<typeof updateCostCentreSchema>;
+
+export type Band = typeof bands.$inferSelect;
+export type InsertBand = z.infer<typeof insertBandSchema>;
+export type UpdateBand = z.infer<typeof updateBandSchema>;
+
+export type Shift = typeof shifts.$inferSelect;
+export type InsertShift = z.infer<typeof insertShiftSchema>;
+export type UpdateShift = z.infer<typeof updateShiftSchema>;
+
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = z.infer<typeof insertRoleSchema>;
+export type UpdateRole = z.infer<typeof updateRoleSchema>;
+
+export type Team = typeof teams.$inferSelect;
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+export type UpdateTeam = z.infer<typeof updateTeamSchema>;
 export type Project = typeof projects.$inferSelect;
 export type InsertProject = z.infer<typeof insertProjectSchema>;

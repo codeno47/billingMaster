@@ -46,22 +46,12 @@ export default function Billing() {
     },
   });
 
-  const { data: teams = [] } = useQuery({
-    queryKey: ["/api/employees/teams"],
-    queryFn: async () => {
-      const response = await fetch("/api/employees/teams");
-      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
-      return response.json();
-    },
+  const { data: teams = [] } = useQuery<any[]>({
+    queryKey: ["/api/config/teams"],
   });
 
-  const { data: costCentres = [] } = useQuery({
-    queryKey: ["/api/employees/cost-centres"],
-    queryFn: async () => {
-      const response = await fetch("/api/employees/cost-centres");
-      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
-      return response.json();
-    },
+  const { data: costCentres = [] } = useQuery<any[]>({
+    queryKey: ["/api/config/cost-centres"],
   });
 
   const { data: stats } = useQuery({
@@ -289,8 +279,8 @@ export default function Billing() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
-                {teams.map((team: string) => (
-                  <SelectItem key={team} value={team}>{team}</SelectItem>
+                {teams.map((team: any) => (
+                  <SelectItem key={team.id} value={team.name}>{team.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -304,8 +294,8 @@ export default function Billing() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Cost Centres</SelectItem>
-                {costCentres.map((centre: string) => (
-                  <SelectItem key={centre} value={centre}>{centre}</SelectItem>
+                {costCentres.map((centre: any) => (
+                  <SelectItem key={centre.id} value={centre.code}>{centre.code} - {centre.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

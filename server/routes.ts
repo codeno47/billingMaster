@@ -123,7 +123,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         costCentre,
         sortBy = 'name',
         sortOrder = 'asc'
-      } = req.query;
+      } = {
+        search: typeof req.query.search === 'string' ? req.query.search : undefined,
+        team: typeof req.query.team === 'string' ? req.query.team : undefined,
+        status: typeof req.query.status === 'string' ? req.query.status : undefined,
+        role: typeof req.query.role === 'string' ? req.query.role : undefined,
+        costCentre: typeof req.query.costCentre === 'string' ? req.query.costCentre : undefined,
+        sortBy: typeof req.query.sortBy === 'string' ? req.query.sortBy : 'name',
+        sortOrder: (req.query.sortOrder === 'desc' || req.query.sortOrder === 'asc') ? req.query.sortOrder : 'asc'
+      };
 
       // Get filtered employees using the same parameters as the main listing
       const { employees } = await storage.getEmployees({
@@ -313,6 +321,212 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching billing rates:", error);
       res.status(500).json({ message: "Failed to fetch billing rates" });
+    }
+  });
+
+  // Configuration routes (admin only)
+  // Cost Centre routes
+  app.get("/api/config/cost-centres", isAuthenticated, async (req, res) => {
+    try {
+      const costCentres = await storage.getCostCentres();
+      res.json(costCentres);
+    } catch (error) {
+      console.error("Error fetching cost centres:", error);
+      res.status(500).json({ message: "Failed to fetch cost centres" });
+    }
+  });
+
+  app.post("/api/config/cost-centres", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const costCentre = await storage.createCostCentre(req.body);
+      res.json(costCentre);
+    } catch (error) {
+      console.error("Error creating cost centre:", error);
+      res.status(500).json({ message: "Failed to create cost centre" });
+    }
+  });
+
+  app.put("/api/config/cost-centres/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const costCentre = await storage.updateCostCentre(parseInt(req.params.id), req.body);
+      res.json(costCentre);
+    } catch (error) {
+      console.error("Error updating cost centre:", error);
+      res.status(500).json({ message: "Failed to update cost centre" });
+    }
+  });
+
+  app.delete("/api/config/cost-centres/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteCostCentre(parseInt(req.params.id));
+      res.json({ message: "Cost centre deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting cost centre:", error);
+      res.status(500).json({ message: "Failed to delete cost centre" });
+    }
+  });
+
+  // Band routes
+  app.get("/api/config/bands", isAuthenticated, async (req, res) => {
+    try {
+      const bands = await storage.getBands();
+      res.json(bands);
+    } catch (error) {
+      console.error("Error fetching bands:", error);
+      res.status(500).json({ message: "Failed to fetch bands" });
+    }
+  });
+
+  app.post("/api/config/bands", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const band = await storage.createBand(req.body);
+      res.json(band);
+    } catch (error) {
+      console.error("Error creating band:", error);
+      res.status(500).json({ message: "Failed to create band" });
+    }
+  });
+
+  app.put("/api/config/bands/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const band = await storage.updateBand(parseInt(req.params.id), req.body);
+      res.json(band);
+    } catch (error) {
+      console.error("Error updating band:", error);
+      res.status(500).json({ message: "Failed to update band" });
+    }
+  });
+
+  app.delete("/api/config/bands/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteBand(parseInt(req.params.id));
+      res.json({ message: "Band deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting band:", error);
+      res.status(500).json({ message: "Failed to delete band" });
+    }
+  });
+
+  // Shift routes
+  app.get("/api/config/shifts", isAuthenticated, async (req, res) => {
+    try {
+      const shifts = await storage.getShifts();
+      res.json(shifts);
+    } catch (error) {
+      console.error("Error fetching shifts:", error);
+      res.status(500).json({ message: "Failed to fetch shifts" });
+    }
+  });
+
+  app.post("/api/config/shifts", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const shift = await storage.createShift(req.body);
+      res.json(shift);
+    } catch (error) {
+      console.error("Error creating shift:", error);
+      res.status(500).json({ message: "Failed to create shift" });
+    }
+  });
+
+  app.put("/api/config/shifts/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const shift = await storage.updateShift(parseInt(req.params.id), req.body);
+      res.json(shift);
+    } catch (error) {
+      console.error("Error updating shift:", error);
+      res.status(500).json({ message: "Failed to update shift" });
+    }
+  });
+
+  app.delete("/api/config/shifts/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteShift(parseInt(req.params.id));
+      res.json({ message: "Shift deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting shift:", error);
+      res.status(500).json({ message: "Failed to delete shift" });
+    }
+  });
+
+  // Role routes
+  app.get("/api/config/roles", isAuthenticated, async (req, res) => {
+    try {
+      const roles = await storage.getRoles();
+      res.json(roles);
+    } catch (error) {
+      console.error("Error fetching roles:", error);
+      res.status(500).json({ message: "Failed to fetch roles" });
+    }
+  });
+
+  app.post("/api/config/roles", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const role = await storage.createRole(req.body);
+      res.json(role);
+    } catch (error) {
+      console.error("Error creating role:", error);
+      res.status(500).json({ message: "Failed to create role" });
+    }
+  });
+
+  app.put("/api/config/roles/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const role = await storage.updateRole(parseInt(req.params.id), req.body);
+      res.json(role);
+    } catch (error) {
+      console.error("Error updating role:", error);
+      res.status(500).json({ message: "Failed to update role" });
+    }
+  });
+
+  app.delete("/api/config/roles/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteRole(parseInt(req.params.id));
+      res.json({ message: "Role deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting role:", error);
+      res.status(500).json({ message: "Failed to delete role" });
+    }
+  });
+
+  // Team routes
+  app.get("/api/config/teams", isAuthenticated, async (req, res) => {
+    try {
+      const teams = await storage.getTeams();
+      res.json(teams);
+    } catch (error) {
+      console.error("Error fetching teams:", error);
+      res.status(500).json({ message: "Failed to fetch teams" });
+    }
+  });
+
+  app.post("/api/config/teams", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const team = await storage.createTeam(req.body);
+      res.json(team);
+    } catch (error) {
+      console.error("Error creating team:", error);
+      res.status(500).json({ message: "Failed to create team" });
+    }
+  });
+
+  app.put("/api/config/teams/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const team = await storage.updateTeam(parseInt(req.params.id), req.body);
+      res.json(team);
+    } catch (error) {
+      console.error("Error updating team:", error);
+      res.status(500).json({ message: "Failed to update team" });
+    }
+  });
+
+  app.delete("/api/config/teams/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteTeam(parseInt(req.params.id));
+      res.json({ message: "Team deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting team:", error);
+      res.status(500).json({ message: "Failed to delete team" });
     }
   });
 

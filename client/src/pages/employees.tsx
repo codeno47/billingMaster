@@ -56,21 +56,15 @@ export default function Employees() {
   });
 
   const { data: teams = [] } = useQuery({
-    queryKey: ["/api/employees/teams"],
-    queryFn: async () => {
-      const response = await fetch("/api/employees/teams");
-      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
-      return response.json();
-    },
+    queryKey: ["/api/config/teams"],
   });
 
   const { data: costCentres = [] } = useQuery({
-    queryKey: ["/api/employees/cost-centres"],
-    queryFn: async () => {
-      const response = await fetch("/api/employees/cost-centres");
-      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
-      return response.json();
-    },
+    queryKey: ["/api/config/cost-centres"],
+  });
+
+  const { data: roles = [] } = useQuery({
+    queryKey: ["/api/config/roles"],
   });
 
   const exportMutation = useMutation({
@@ -372,9 +366,9 @@ export default function Employees() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Teams</SelectItem>
-                {teams.map((team: string) => (
-                  <SelectItem key={team} value={team}>
-                    {team}
+                {teams.map((team: any) => (
+                  <SelectItem key={team.id} value={team.name}>
+                    {team.name}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -397,10 +391,11 @@ export default function Employees() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Roles</SelectItem>
-                <SelectItem value="Dev">Developer</SelectItem>
-                <SelectItem value="QA">QA</SelectItem>
-                <SelectItem value="OPS">Operations</SelectItem>
-                <SelectItem value="EXR">EXR</SelectItem>
+                {roles.map((role: any) => (
+                  <SelectItem key={role.id} value={role.title}>
+                    {role.title}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -411,9 +406,9 @@ export default function Employees() {
               <SelectContent>
                 <SelectItem value="all">All Cost Centres</SelectItem>
                 <SelectItem value="none">Not Assigned</SelectItem>
-                {costCentres.map((centre: string) => (
-                  <SelectItem key={centre} value={centre}>
-                    {centre}
+                {costCentres.map((centre: any) => (
+                  <SelectItem key={centre.id} value={centre.code}>
+                    {centre.code} - {centre.name}
                   </SelectItem>
                 ))}
               </SelectContent>

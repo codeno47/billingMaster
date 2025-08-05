@@ -85,14 +85,25 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
   const { toast } = useToast();
   const isEditing = !!employee;
 
-  // Fetch teams data
+  // Fetch configuration data for dropdowns
   const { data: teams = [] } = useQuery({
-    queryKey: ["/api/employees/teams"],
-    queryFn: async () => {
-      const response = await fetch("/api/employees/teams");
-      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
-      return response.json();
-    },
+    queryKey: ["/api/config/teams"],
+  });
+
+  const { data: costCentres = [] } = useQuery({
+    queryKey: ["/api/config/cost-centres"],
+  });
+
+  const { data: bands = [] } = useQuery({
+    queryKey: ["/api/config/bands"],
+  });
+
+  const { data: shifts = [] } = useQuery({
+    queryKey: ["/api/config/shifts"],
+  });
+
+  const { data: roles = [] } = useQuery({
+    queryKey: ["/api/config/roles"],
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -194,9 +205,11 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="MH-BYN">MH-BYN</SelectItem>
-                    <SelectItem value="MH-OPS">MH-OPS</SelectItem>
-                    <SelectItem value="EXR-OPS">EXR-OPS</SelectItem>
+                    {costCentres.map((centre: any) => (
+                      <SelectItem key={centre.id} value={centre.code}>
+                        {centre.code} - {centre.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -235,10 +248,11 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="Dev">Developer</SelectItem>
-                    <SelectItem value="QA">QA</SelectItem>
-                    <SelectItem value="OPS">Operations</SelectItem>
-                    <SelectItem value="EXR">EXR</SelectItem>
+                    {roles.map((role: any) => (
+                      <SelectItem key={role.id} value={role.title}>
+                        {role.title}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -259,9 +273,9 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {teams.map((team: string) => (
-                      <SelectItem key={team} value={team}>
-                        {team}
+                    {teams.map((team: any) => (
+                      <SelectItem key={team.id} value={team.name}>
+                        {team.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -320,13 +334,11 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="A">A</SelectItem>
-                    <SelectItem value="B">B</SelectItem>
-                    <SelectItem value="C">C</SelectItem>
-                    <SelectItem value="D">D</SelectItem>
-                    <SelectItem value="E">E</SelectItem>
-                    <SelectItem value="F">F</SelectItem>
-                    <SelectItem value="G">G</SelectItem>
+                    {bands.map((band: any) => (
+                      <SelectItem key={band.id} value={band.level}>
+                        {band.level} - {band.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -375,9 +387,11 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="9 AM - 6 PM">9 AM - 6 PM</SelectItem>
-                    <SelectItem value="1 PM - 11 PM">1 PM - 11 PM</SelectItem>
-                    <SelectItem value="6 PM - 3 AM">6 PM - 3 AM</SelectItem>
+                    {shifts.map((shift: any) => (
+                      <SelectItem key={shift.id} value={shift.name}>
+                        {shift.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <FormMessage />
