@@ -4,7 +4,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { SessionTimeoutWarning } from "@/components/SessionTimeoutWarning";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Employees from "@/pages/employees";
@@ -17,24 +19,36 @@ import Sidebar from "@/components/layout/sidebar";
 import Navbar from "@/components/layout/navbar";
 
 function AuthenticatedLayout() {
+  // Enable session timeout monitoring for authenticated users
+  const { showWarning, timeLeft, extendSession, logoutNow } = useSessionTimeout();
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
-        <Navbar />
-        <main className="flex-1 p-6">
-          <Switch>
-            <Route path="/" component={Dashboard} />
-            <Route path="/employees" component={Employees} />
-            <Route path="/billing" component={Billing} />
-            <Route path="/reports" component={Reports} />
-            <Route path="/settings" component={Settings} />
-            <Route path="/users" component={UserManagement} />
-            <Route component={NotFound} />
-          </Switch>
-        </main>
+    <>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar />
+        <div className="flex-1 flex flex-col">
+          <Navbar />
+          <main className="flex-1 p-6">
+            <Switch>
+              <Route path="/" component={Dashboard} />
+              <Route path="/employees" component={Employees} />
+              <Route path="/billing" component={Billing} />
+              <Route path="/reports" component={Reports} />
+              <Route path="/settings" component={Settings} />
+              <Route path="/users" component={UserManagement} />
+              <Route component={NotFound} />
+            </Switch>
+          </main>
+        </div>
       </div>
-    </div>
+      
+      <SessionTimeoutWarning
+        isOpen={showWarning}
+        timeLeft={timeLeft}
+        onExtendSession={extendSession}
+        onLogout={logoutNow}
+      />
+    </>
   );
 }
 

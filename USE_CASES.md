@@ -211,11 +211,32 @@ This document provides comprehensive test scenarios for the Employee Billing Man
 ### 8. Edge Cases and Error Handling
 
 #### UC-8.1: Session Timeout
-**Objective**: Test session management
+**Objective**: Test automatic session timeout after 30 minutes of inactivity
 **Steps**:
-1. Log in and remain inactive for extended period
-2. Try to perform an action
-**Expected Result**: Redirected to login if session expired
+1. Log in with admin or finance credentials
+2. Remain inactive (no mouse movement, clicks, or keyboard input) for 28 minutes
+3. Observe warning dialog appearing at 28-minute mark
+4. Wait for 2-minute countdown without taking action
+**Expected Result**: 
+- Warning dialog appears 2 minutes before expiry (at 28-minute mark)
+- Countdown timer shows remaining time
+- Session automatically expires after 30 minutes total
+- User redirected to login page
+- All cached data cleared
+
+#### UC-8.1b: Session Extension
+**Objective**: Test session extension via warning dialog
+**Steps**:
+1. Trigger session warning (wait 28 minutes of inactivity)
+2. Click "Extend Session" button when warning appears
+**Expected Result**: Session extended, warning dismissed, user remains logged in
+
+#### UC-8.1c: Activity-Based Session Reset
+**Objective**: Test that user activity resets session timer
+**Steps**:
+1. Log in and perform various actions (click, scroll, type)
+2. Check that session remains active beyond 30 minutes when actively using
+**Expected Result**: Session timer resets with each user interaction
 
 #### UC-8.2: Data Validation
 **Objective**: Test input validation

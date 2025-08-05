@@ -14,6 +14,9 @@ This is an Employee Billing Management System built as a full-stack web applicat
 - Added new monthly billing per cost centre report with comprehensive analytics and CSV export functionality
 - Implemented tabbed interface in reports page to separate change tracking and billing analysis
 - Created comprehensive use case testing document (USE_CASES.md) covering all application functionality, user roles, and edge cases
+- Implemented 30-minute session timeout with activity monitoring and user warning system
+- Added automatic session expiry with 2-minute warning dialog before logout
+- Enhanced security with rolling session expiry that resets on user activity
 
 # User Preferences
 
