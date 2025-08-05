@@ -662,7 +662,7 @@ export class DatabaseStorage implements IStorage {
 
   // Configuration operations
   async getCostCentres(): Promise<CostCentre[]> {
-    return await db.select().from(costCentres).where(eq(costCentres.isActive, true)).orderBy(costCentres.code);
+    return await db.select().from(costCentres).orderBy(costCentres.code);
   }
 
   async createCostCentre(costCentreData: InsertCostCentre): Promise<CostCentre> {
@@ -683,10 +683,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteCostCentre(id: number): Promise<void> {
-    await db
-      .update(costCentres)
-      .set({ isActive: false, updatedAt: new Date() })
-      .where(eq(costCentres.id, id));
+    await db.delete(costCentres).where(eq(costCentres.id, id));
   }
 
   async getBands(): Promise<Band[]> {
@@ -806,9 +803,9 @@ export class DatabaseStorage implements IStorage {
     const existingCostCentres = await db.select().from(costCentres);
     if (existingCostCentres.length === 0) {
       await db.insert(costCentres).values([
-        { code: "MH-BYN", name: "Mumbai - Borivali", description: "Mumbai Borivali office operations" },
-        { code: "MH-OPS", name: "Mumbai - Operations", description: "Mumbai operations center" },
-        { code: "EXR-OPS", name: "External - Operations", description: "External operations and support" },
+        { code: "MH-BYN", description: "Mumbai Borivali office operations" },
+        { code: "MH-OPS", description: "Mumbai operations center" },
+        { code: "EXR-OPS", description: "External operations and support" },
       ]);
     }
 
