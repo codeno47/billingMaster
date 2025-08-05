@@ -11,7 +11,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import EmployeeTable from "@/components/employees/employee-table";
 import EmployeeForm from "@/components/employees/employee-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Upload, Download, Trash2 } from "lucide-react";
+import { Plus, Upload, Download, Trash2, RotateCcw } from "lucide-react";
 import { isUnauthorizedError } from "@/lib/authUtils";
 
 export default function Employees() {
@@ -195,6 +195,37 @@ export default function Employees() {
     setPagination(prev => ({ ...prev, page: 1 }));
   };
 
+  const handleResetFilters = () => {
+    setFilters({
+      search: "",
+      team: "all",
+      status: "all",
+      role: "all",
+      costCentre: "all",
+    });
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  // Check if any filters are active (excluding default "all" values)
+  const hasActiveFilters = () => {
+    return filters.search !== "" || 
+           filters.team !== "all" || 
+           filters.status !== "all" || 
+           filters.role !== "all" || 
+           filters.costCentre !== "all";
+  };
+
+  // Count active filters
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (filters.search !== "") count++;
+    if (filters.team !== "all") count++;
+    if (filters.status !== "all") count++;
+    if (filters.role !== "all") count++;
+    if (filters.costCentre !== "all") count++;
+    return count;
+  };
+
   const handleSort = (column: string) => {
     setSortConfig(prev => ({
       sortBy: column,
@@ -289,65 +320,88 @@ export default function Employees() {
         </div>
 
         {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <Input
-            placeholder="Search employees..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange("search", e.target.value)}
-          />
+        <div className="space-y-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <h3 className="text-lg font-medium text-gray-800">Filter Employees</h3>
+              {hasActiveFilters() && (
+                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {getActiveFilterCount()} filter{getActiveFilterCount() !== 1 ? 's' : ''} applied
+                </span>
+              )}
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetFilters}
+              disabled={!hasActiveFilters()}
+              className={`${hasActiveFilters() ? 'text-gray-600 hover:text-gray-800' : 'text-gray-400 cursor-not-allowed'}`}
+            >
+              <RotateCcw className="w-4 h-4 mr-2" />
+              Reset Filters
+            </Button>
+          </div>
           
-          <Select value={filters.team} onValueChange={(value) => handleFilterChange("team", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Teams" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Teams</SelectItem>
-              {teams.map((team: string) => (
-                <SelectItem key={team} value={team}>
-                  {team}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          <Select value={filters.status} onValueChange={(value) => handleFilterChange("status", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          <Select value={filters.role} onValueChange={(value) => handleFilterChange("role", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Roles" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="Dev">Developer</SelectItem>
-              <SelectItem value="QA">QA</SelectItem>
-              <SelectItem value="OPS">Operations</SelectItem>
-              <SelectItem value="EXR">EXR</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <Input
+              placeholder="Search employees..."
+              value={filters.search}
+              onChange={(e) => handleFilterChange("search", e.target.value)}
+            />
+            
+            <Select value={filters.team} onValueChange={(value) => handleFilterChange("team", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Teams" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Teams</SelectItem>
+                {teams.map((team: string) => (
+                  <SelectItem key={team} value={team}>
+                    {team}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            <Select value={filters.status} onValueChange={(value) => handleFilterChange("status", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={filters.role} onValueChange={(value) => handleFilterChange("role", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Roles" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Roles</SelectItem>
+                <SelectItem value="Dev">Developer</SelectItem>
+                <SelectItem value="QA">QA</SelectItem>
+                <SelectItem value="OPS">Operations</SelectItem>
+                <SelectItem value="EXR">EXR</SelectItem>
+              </SelectContent>
+            </Select>
 
-          <Select value={filters.costCentre} onValueChange={(value) => handleFilterChange("costCentre", value)}>
-            <SelectTrigger>
-              <SelectValue placeholder="All Cost Centres" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Cost Centres</SelectItem>
-              <SelectItem value="none">Not Assigned</SelectItem>
-              {costCentres.map((centre: string) => (
-                <SelectItem key={centre} value={centre}>
-                  {centre}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Select value={filters.costCentre} onValueChange={(value) => handleFilterChange("costCentre", value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="All Cost Centres" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Cost Centres</SelectItem>
+                <SelectItem value="none">Not Assigned</SelectItem>
+                {costCentres.map((centre: string) => (
+                  <SelectItem key={centre} value={centre}>
+                    {centre}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Employee Table */}

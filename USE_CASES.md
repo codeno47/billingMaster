@@ -105,7 +105,14 @@ This document provides comprehensive test scenarios for the Employee Billing Man
 2. Filter by status (Active/Inactive)
 3. Filter by cost centre
 4. Filter by role
-**Expected Result**: List updates dynamically based on search criteria
+5. Apply multiple filters simultaneously
+6. Observe filter count indicator
+7. Click "Reset Filters" button
+**Expected Result**: 
+- List updates dynamically based on search criteria
+- Filter count badge shows number of active filters
+- Reset Filters button clears all applied filters at once
+- Button is disabled when no filters are applied
 
 ### 4. CSV Import/Export Testing
 

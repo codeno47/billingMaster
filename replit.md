@@ -17,6 +17,8 @@ This is an Employee Billing Management System built as a full-stack web applicat
 - Implemented 30-minute session timeout with activity monitoring and user warning system
 - Added automatic session expiry with 2-minute warning dialog before logout
 - Enhanced security with rolling session expiry that resets on user activity
+- Added "Reset Filters" button to Employee module for clearing all applied filters at once
+- Enhanced filter UI with active filter count indicator and improved organization
 
 # User Preferences
 
