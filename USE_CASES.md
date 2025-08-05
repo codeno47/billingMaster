@@ -163,11 +163,21 @@ This document provides comprehensive test scenarios for the Employee Billing Man
 **Expected Result**: Multiple employees imported successfully, data validated and added to system
 
 #### UC-4.3: CSV Import Validation
-**Objective**: Test import error handling
+**Objective**: Test import error handling and empty file validation
 **Steps**:
-1. Create a CSV with invalid data (missing required fields, invalid rates)
-2. Attempt to import
-**Expected Result**: Validation errors displayed, invalid records rejected
+1. Test empty file validation:
+   - Create a completely empty CSV file (0 bytes)
+   - Create a CSV file with only headers but no data rows
+   - Create a CSV file with whitespace only
+2. Test invalid data validation:
+   - Create a CSV with invalid data (missing required fields, invalid rates)
+3. Attempt to import each file type
+**Expected Result**: 
+- Empty files show error: "Cannot import empty file. Please upload a CSV file with employee data."
+- Files with no data show error: "CSV file contains no employee data. Please ensure the file has valid employee records."
+- Files with no valid records show error: "No valid employee records found in the CSV file. Please check the file format and data."
+- Invalid data validation errors displayed, invalid records rejected
+- Success message only appears when employees are actually imported
 
 ### 5. Billing Management Testing
 
