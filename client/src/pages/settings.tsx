@@ -183,7 +183,8 @@ function SettingsContent() {
   // Generic mutation for all config types
   const createMutation = useMutation({
     mutationFn: async ({ endpoint, data }: { endpoint: string; data: any }) => {
-      return await apiRequest(endpoint, "POST", data);
+      const response = await apiRequest("POST", endpoint, data);
+      return await response.json();
     },
     onSuccess: (_, { endpoint }) => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
@@ -199,7 +200,15 @@ function SettingsContent() {
   const updateMutation = useMutation({
     mutationFn: async ({ endpoint, id, data }: { endpoint: string; id: number; data: any }) => {
       console.log("Frontend updating:", endpoint, id, data);
-      return await apiRequest(`${endpoint}/${id}`, "PUT", data);
+      try {
+        const response = await apiRequest("PUT", `${endpoint}/${id}`, data);
+        const result = await response.json();
+        console.log("API request successful:", result);
+        return result;
+      } catch (error) {
+        console.error("API request failed:", error);
+        throw error;
+      }
     },
     onSuccess: (result, { endpoint }) => {
       console.log("Update successful:", result);
@@ -208,15 +217,17 @@ function SettingsContent() {
       setEditingItem(null);
       toast({ title: "Success", description: "Item updated successfully" });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Update failed:", error);
-      toast({ title: "Error", description: "Failed to update item", variant: "destructive" });
+      const errorMessage = error?.message || "Failed to update item";
+      toast({ title: "Error", description: errorMessage, variant: "destructive" });
     },
   });
 
   const deleteMutation = useMutation({
     mutationFn: async ({ endpoint, id }: { endpoint: string; id: number }) => {
-      return await apiRequest(`${endpoint}/${id}`, "DELETE");
+      const response = await apiRequest("DELETE", `${endpoint}/${id}`);
+      return await response.json();
     },
     onSuccess: (_, { endpoint }) => {
       queryClient.invalidateQueries({ queryKey: [endpoint] });
