@@ -330,6 +330,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const csvData = await parseCSV(req.file.buffer);
       
+      console.log(`CSV parsing result: ${csvData ? csvData.length : 0} records found`);
+      
       // Check if CSV has no data records (only headers or completely empty)
       if (!csvData || csvData.length === 0) {
         return res.status(400).json({ message: "CSV file contains no employee data. Please ensure the file has valid employee records." });
@@ -338,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const result = await storage.importEmployeesFromCSV(csvData);
       
       // Additional check: if no employees were successfully imported
-      if (result.imported === 0 && result.errors === 0) {
+      if (result.imported === 0 && result.errors.length === 0) {
         return res.status(400).json({ message: "No valid employee records found in the CSV file. Please check the file format and data." });
       }
       
