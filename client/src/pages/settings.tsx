@@ -21,8 +21,7 @@ import { apiRequest } from "@/lib/queryClient";
 // Schema definitions for forms
 const costCentreSchema = z.object({
   code: z.string().min(1, "Code is required"),
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
+  description: z.string().min(1, "Description is required"),
 });
 
 const bandSchema = z.object({
@@ -228,7 +227,7 @@ function SettingsContent() {
   // Forms
   const costCentreForm = useForm<CostCentreForm>({
     resolver: zodResolver(costCentreSchema),
-    defaultValues: { code: "", name: "", description: "" },
+    defaultValues: { code: "", description: "" },
   });
 
   const bandForm = useForm<BandForm>({
@@ -331,7 +330,6 @@ function SettingsContent() {
             data={costCentres}
             columns={[
               { key: "code", label: "Code" },
-              { key: "name", label: "Name" },
               { key: "description", label: "Description" },
             ]}
             onAdd={() => handleAdd("cost-centres")}
@@ -439,25 +437,12 @@ function SettingsContent() {
                 />
                 <FormField
                   control={costCentreForm.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Name *</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Mumbai - Borivali" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={costCentreForm.control}
                   name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Description</FormLabel>
+                      <FormLabel>Description *</FormLabel>
                       <FormControl>
-                        <Textarea placeholder="Optional description" {...field} />
+                        <Textarea placeholder="e.g., Mumbai Borivali office operations" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

@@ -84,9 +84,7 @@ export const projects = pgTable("projects", {
 export const costCentres = pgTable("cost_centres", {
   id: serial("id").primaryKey(),
   code: varchar("code").notNull().unique(),
-  name: varchar("name").notNull(),
-  description: text("description"),
-  isActive: boolean("is_active").notNull().default(true),
+  description: text("description").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

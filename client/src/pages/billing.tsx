@@ -295,7 +295,7 @@ export default function Billing() {
               <SelectContent>
                 <SelectItem value="all">All Cost Centres</SelectItem>
                 {costCentres.map((centre: any) => (
-                  <SelectItem key={centre.id} value={centre.code}>{centre.code} - {centre.name}</SelectItem>
+                  <SelectItem key={centre.id} value={centre.code}>{centre.code} - {centre.description}</SelectItem>
                 ))}
               </SelectContent>
             </Select>

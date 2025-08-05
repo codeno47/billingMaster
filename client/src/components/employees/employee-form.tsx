@@ -207,7 +207,7 @@ export default function EmployeeForm({ employee, onSuccess }: EmployeeFormProps)
                   <SelectContent>
                     {costCentres.map((centre: any) => (
                       <SelectItem key={centre.id} value={centre.code}>
-                        {centre.code} - {centre.name}
+                        {centre.code} - {centre.description}
                       </SelectItem>
                     ))}
                   </SelectContent>

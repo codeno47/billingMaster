@@ -408,7 +408,7 @@ export default function Employees() {
                 <SelectItem value="none">Not Assigned</SelectItem>
                 {costCentres.map((centre: any) => (
                   <SelectItem key={centre.id} value={centre.code}>
-                    {centre.code} - {centre.name}
+                    {centre.code} - {centre.description}
                   </SelectItem>
                 ))}
               </SelectContent>
