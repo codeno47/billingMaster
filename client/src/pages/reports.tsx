@@ -3,10 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calendar, Filter, Download, Clock, Edit, TrendingUp, Building2, DollarSign, BarChart3 } from "lucide-react";
+import { Calendar, Filter, Download, Clock, Edit, TrendingUp, Building2, DollarSign, BarChart3, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import type { Employee } from "@shared/schema";
 import { useAuth } from "@/hooks/useAuth";
 import { InteractiveSparkline } from "@/components/SparklineChart";
@@ -33,16 +34,82 @@ export default function Reports() {
   const [period, setPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [activeTab, setActiveTab] = useState('changes');
   
-  const { data: changeReports = [], isLoading: isLoadingChanges } = useQuery<Employee[]>({
-    queryKey: [`/api/reports/changes?period=${period}`],
+  // Changes report filters and pagination
+  const [changesFilters, setChangesFilters] = useState({
+    search: "",
+    team: "all",
+    status: "all",
+  });
+  
+  const [changesPagination, setChangesPagination] = useState({
+    page: 1,
+    limit: 25,
+  });
+  
+  const [changesSortConfig, setChangesSortConfig] = useState({
+    sortBy: "updatedAt",
+    sortOrder: "desc" as "asc" | "desc",
+  });
+  
+  // Billing report filters and pagination
+  const [billingFilters, setBillingFilters] = useState({
+    search: "",
+  });
+  
+  const [billingPagination, setBillingPagination] = useState({
+    page: 1,
+    limit: 25,
+  });
+  
+  const [billingSortConfig, setBillingSortConfig] = useState({
+    sortBy: "totalBilling",
+    sortOrder: "desc" as "asc" | "desc",
+  });
+  
+  const { data: changeReportsData, isLoading: isLoadingChanges } = useQuery({
+    queryKey: ["/api/reports/changes", period, changesFilters, changesPagination, changesSortConfig],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        period,
+        ...changesFilters,
+        page: changesPagination.page.toString(),
+        limit: changesPagination.limit.toString(),
+        sortBy: changesSortConfig.sortBy,
+        sortOrder: changesSortConfig.sortOrder,
+      });
+      
+      const response = await fetch(`/api/reports/changes?${params}`);
+      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
+      return response.json();
+    },
   });
 
-  const { data: costCentreBilling = [], isLoading: isLoadingBilling } = useQuery<CostCentreBilling[]>({
-    queryKey: ['/api/reports/cost-centre-billing'],
+  const { data: costCentreBillingData, isLoading: isLoadingBilling } = useQuery({
+    queryKey: ["/api/reports/cost-centre-billing", billingFilters, billingPagination, billingSortConfig],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        ...billingFilters,
+        page: billingPagination.page.toString(),
+        limit: billingPagination.limit.toString(),
+        sortBy: billingSortConfig.sortBy,
+        sortOrder: billingSortConfig.sortOrder,
+      });
+      
+      const response = await fetch(`/api/reports/cost-centre-billing?${params}`);
+      if (!response.ok) throw new Error(`${response.status}: ${response.statusText}`);
+      return response.json();
+    },
   });
 
   const { data: performanceData = [], isLoading: isLoadingPerformance } = useQuery<PerformanceData[]>({
     queryKey: ['/api/reports/cost-centre-performance'],
+  });
+
+  const changeReports = changeReportsData?.reports || [];
+  const costCentreBilling = costCentreBillingData?.billing || [];
+
+  const { data: teams = [] } = useQuery<any[]>({
+    queryKey: ["/api/config/teams"],
   });
 
   const handleDownloadReport = () => {
@@ -98,8 +165,52 @@ export default function Reports() {
     window.URL.revokeObjectURL(url);
   };
 
+  // Helper functions for changes tab
+  const handleChangesSort = (column: string) => {
+    setChangesSortConfig(prev => ({
+      sortBy: column,
+      sortOrder: prev.sortBy === column && prev.sortOrder === "asc" ? "desc" : "asc"
+    }));
+    setChangesPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const resetChangesFilters = () => {
+    setChangesFilters({
+      search: "",
+      team: "all",
+      status: "all",
+    });
+    setChangesPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const getChangesActiveFilterCount = () => {
+    return Object.entries(changesFilters).filter(([key, value]) => 
+      key !== 'search' && value !== 'all'
+    ).length + (changesFilters.search ? 1 : 0);
+  };
+
+  const hasChangesActiveFilters = () => getChangesActiveFilterCount() > 0;
+
+  // Helper functions for billing tab
+  const handleBillingSort = (column: string) => {
+    setBillingSortConfig(prev => ({
+      sortBy: column,
+      sortOrder: prev.sortBy === column && prev.sortOrder === "asc" ? "desc" : "asc"
+    }));
+    setBillingPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const resetBillingFilters = () => {
+    setBillingFilters({
+      search: "",
+    });
+    setBillingPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  const hasBillingActiveFilters = () => billingFilters.search.length > 0;
+
   const getPeriodStats = () => {
-    const totalChanges = changeReports.length;
+    const totalChanges = changeReportsData?.total || 0;
     const uniqueEmployees = new Set(changeReports.map(emp => emp.id)).size;
     const statusChanges = changeReports.filter(emp => 
       emp.changesSummary?.includes('Status:')
@@ -112,8 +223,8 @@ export default function Reports() {
   };
 
   const getBillingStats = () => {
-    const totalBilling = costCentreBilling.reduce((sum, cc) => sum + cc.totalBilling, 0);
-    const totalEmployees = costCentreBilling.reduce((sum, cc) => sum + cc.employeeCount, 0);
+    const totalBilling = costCentreBillingData?.totalBilling || 0;
+    const totalEmployees = costCentreBillingData?.totalEmployees || 0;
     const averagePerCentre = costCentreBilling.length > 0 ? totalBilling / costCentreBilling.length : 0;
     
     return { totalBilling, totalEmployees, averagePerCentre, centreCount: costCentreBilling.length };
@@ -169,6 +280,89 @@ export default function Reports() {
               </Button>
             </div>
           </div>
+
+          {/* Filters Section for Changes */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  Filters
+                  {hasChangesActiveFilters() && (
+                    <Badge variant="secondary" className="ml-2">
+                      {getChangesActiveFilterCount()} active
+                    </Badge>
+                  )}
+                </CardTitle>
+                {hasChangesActiveFilters() && (
+                  <Button variant="outline" size="sm" onClick={resetChangesFilters}>
+                    <X className="h-4 w-4 mr-1" />
+                    Reset
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search employees..."
+                    value={changesFilters.search}
+                    onChange={(e) => {
+                      setChangesFilters(prev => ({ ...prev, search: e.target.value }));
+                      setChangesPagination(prev => ({ ...prev, page: 1 }));
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <Select value={changesFilters.team} onValueChange={(value) => {
+                  setChangesFilters(prev => ({ ...prev, team: value }));
+                  setChangesPagination(prev => ({ ...prev, page: 1 }));
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Teams</SelectItem>
+                    {teams.map((team: any) => (
+                      <SelectItem key={team.id} value={team.name}>{team.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <Select value={changesFilters.status} onValueChange={(value) => {
+                  setChangesFilters(prev => ({ ...prev, status: value }));
+                  setChangesPagination(prev => ({ ...prev, page: 1 }));
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="deleted">Deleted</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                <Select value={changesPagination.limit.toString()} onValueChange={(value) => {
+                  setChangesPagination(prev => ({ ...prev, limit: parseInt(value), page: 1 }));
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Per Page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="25">25 per page</SelectItem>
+                    <SelectItem value="50">50 per page</SelectItem>
+                    <SelectItem value="100">100 per page</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -232,10 +426,15 @@ export default function Reports() {
           {/* Changes Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Calendar className="w-5 h-5" />
-                <span>Recent Changes ({period})</span>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <Calendar className="w-5 h-5" />
+                  <span>Recent Changes ({period})</span>
+                </CardTitle>
+                <div className="text-sm text-gray-600">
+                  Showing {changeReports.length} of {changeReportsData?.total || 0} changes
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoadingChanges ? (
@@ -249,8 +448,18 @@ export default function Reports() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Employee</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleChangesSort("updatedAt")}
+                        >
+                          Date {changesSortConfig.sortBy === "updatedAt" && (changesSortConfig.sortOrder === "asc" ? "↑" : "↓")}
+                        </TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleChangesSort("name")}
+                        >
+                          Employee {changesSortConfig.sortBy === "name" && (changesSortConfig.sortOrder === "asc" ? "↑" : "↓")}
+                        </TableHead>
                         <TableHead>Team</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead>Changes Made</TableHead>
@@ -285,6 +494,55 @@ export default function Reports() {
                   </Table>
                 </div>
               )}
+              
+              {/* Pagination for Changes */}
+              {changeReportsData?.totalPages && changeReportsData.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-gray-600">
+                    Page {changeReportsData.page} of {changeReportsData.totalPages} 
+                    ({changeReportsData.total} total changes)
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setChangesPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                      disabled={changeReportsData.page <= 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, changeReportsData.totalPages) }, (_, i) => {
+                        const pageNumber = Math.max(1, Math.min(
+                          changeReportsData.totalPages - 4,
+                          changeReportsData.page - 2
+                        )) + i;
+                        return pageNumber <= changeReportsData.totalPages ? (
+                          <Button
+                            key={pageNumber}
+                            variant={pageNumber === changeReportsData.page ? "default" : "outline"}
+                            size="sm"
+                            className="w-8 h-8 p-0"
+                            onClick={() => setChangesPagination(prev => ({ ...prev, page: pageNumber }))}
+                          >
+                            {pageNumber}
+                          </Button>
+                        ) : null;
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setChangesPagination(prev => ({ ...prev, page: Math.min(changeReportsData.totalPages, prev.page + 1) }))}
+                      disabled={changeReportsData.page >= changeReportsData.totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -301,6 +559,59 @@ export default function Reports() {
               Export CSV
             </Button>
           </div>
+
+          {/* Filters Section for Billing */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Filter className="h-5 w-5" />
+                  Filters
+                  {hasBillingActiveFilters() && (
+                    <Badge variant="secondary" className="ml-2">
+                      1 active
+                    </Badge>
+                  )}
+                </CardTitle>
+                {hasBillingActiveFilters() && (
+                  <Button variant="outline" size="sm" onClick={resetBillingFilters}>
+                    <X className="h-4 w-4 mr-1" />
+                    Reset
+                  </Button>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search cost centres..."
+                    value={billingFilters.search}
+                    onChange={(e) => {
+                      setBillingFilters(prev => ({ ...prev, search: e.target.value }));
+                      setBillingPagination(prev => ({ ...prev, page: 1 }));
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+
+                <Select value={billingPagination.limit.toString()} onValueChange={(value) => {
+                  setBillingPagination(prev => ({ ...prev, limit: parseInt(value), page: 1 }));
+                }}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Per Page" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10 per page</SelectItem>
+                    <SelectItem value="25">25 per page</SelectItem>
+                    <SelectItem value="50">50 per page</SelectItem>
+                    <SelectItem value="100">100 per page</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Billing Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -379,10 +690,15 @@ export default function Reports() {
           {/* Billing Table */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Building2 className="w-5 h-5" />
-                <span>Cost Centre Billing Breakdown</span>
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center space-x-2">
+                  <Building2 className="w-5 h-5" />
+                  <span>Cost Centre Billing Breakdown</span>
+                </CardTitle>
+                <div className="text-sm text-gray-600">
+                  Showing {costCentreBilling.length} of {costCentreBillingData?.total || 0} cost centres
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               {isLoadingBilling ? (
@@ -396,10 +712,30 @@ export default function Reports() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Cost Centre</TableHead>
-                        <TableHead className="text-right">Monthly Billing</TableHead>
-                        <TableHead className="text-right">Active Employees</TableHead>
-                        <TableHead className="text-right">Average Rate</TableHead>
+                        <TableHead 
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleBillingSort("costCentre")}
+                        >
+                          Cost Centre {billingSortConfig.sortBy === "costCentre" && (billingSortConfig.sortOrder === "asc" ? "↑" : "↓")}
+                        </TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleBillingSort("totalBilling")}
+                        >
+                          Monthly Billing {billingSortConfig.sortBy === "totalBilling" && (billingSortConfig.sortOrder === "asc" ? "↑" : "↓")}
+                        </TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleBillingSort("employeeCount")}
+                        >
+                          Active Employees {billingSortConfig.sortBy === "employeeCount" && (billingSortConfig.sortOrder === "asc" ? "↑" : "↓")}
+                        </TableHead>
+                        <TableHead 
+                          className="text-right cursor-pointer hover:bg-gray-50"
+                          onClick={() => handleBillingSort("averageRate")}
+                        >
+                          Average Rate {billingSortConfig.sortBy === "averageRate" && (billingSortConfig.sortOrder === "asc" ? "↑" : "↓")}
+                        </TableHead>
                         <TableHead className="text-right">Billing %</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -431,6 +767,55 @@ export default function Reports() {
                       })}
                     </TableBody>
                   </Table>
+                </div>
+              )}
+              
+              {/* Pagination for Billing */}
+              {costCentreBillingData?.totalPages && costCentreBillingData.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4">
+                  <div className="text-sm text-gray-600">
+                    Page {costCentreBillingData.page} of {costCentreBillingData.totalPages} 
+                    ({costCentreBillingData.total} total cost centres)
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setBillingPagination(prev => ({ ...prev, page: Math.max(1, prev.page - 1) }))}
+                      disabled={costCentreBillingData.page <= 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <div className="flex items-center space-x-1">
+                      {Array.from({ length: Math.min(5, costCentreBillingData.totalPages) }, (_, i) => {
+                        const pageNumber = Math.max(1, Math.min(
+                          costCentreBillingData.totalPages - 4,
+                          costCentreBillingData.page - 2
+                        )) + i;
+                        return pageNumber <= costCentreBillingData.totalPages ? (
+                          <Button
+                            key={pageNumber}
+                            variant={pageNumber === costCentreBillingData.page ? "default" : "outline"}
+                            size="sm"
+                            className="w-8 h-8 p-0"
+                            onClick={() => setBillingPagination(prev => ({ ...prev, page: pageNumber }))}
+                          >
+                            {pageNumber}
+                          </Button>
+                        ) : null;
+                      })}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setBillingPagination(prev => ({ ...prev, page: Math.min(costCentreBillingData.totalPages, prev.page + 1) }))}
+                      disabled={costCentreBillingData.page >= costCentreBillingData.totalPages}
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>

@@ -75,7 +75,16 @@ export interface IStorage {
     period?: 'week' | 'month' | 'year';
     startDate?: string;
     endDate?: string;
-  }): Promise<Employee[]>;
+    search?: string;
+    team?: string;
+    status?: string;
+  }, pagination?: {
+    page: number;
+    limit: number;
+  }, sorting?: {
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+  }): Promise<{ reports: Employee[]; total: number; page: number; totalPages: number; }>;
 
   // Billing operations
   getBillingRates(): Promise<BillingRate[]>;
@@ -90,7 +99,22 @@ export interface IStorage {
   importEmployeesFromCSV(data: any[]): Promise<{ imported: number; errors: string[] }>;
   
   // Reports
-  getCostCentreBillingReport(): Promise<{ costCentre: string; totalBilling: number; employeeCount: number; averageRate: number }[]>;
+  getCostCentreBillingReport(filters?: {
+    search?: string;
+  }, pagination?: {
+    page: number;
+    limit: number;
+  }, sorting?: {
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+  }): Promise<{ 
+    billing: { costCentre: string; totalBilling: number; employeeCount: number; averageRate: number }[];
+    total: number;
+    page: number;
+    totalPages: number;
+    totalBilling: number;
+    totalEmployees: number;
+  }>;
   getCostCentrePerformanceData(): Promise<{ costCentre: string; monthlyData: { month: string; billing: number; employees: number; averageRate: number }[] }[]>;
 
   // Configuration operations
@@ -450,8 +474,19 @@ export class DatabaseStorage implements IStorage {
     period?: 'week' | 'month' | 'year';
     startDate?: string;
     endDate?: string;
-  } = {}): Promise<Employee[]> {
-    const { period, startDate, endDate } = filters;
+    search?: string;
+    team?: string;
+    status?: string;
+  } = {}, pagination?: {
+    page: number;
+    limit: number;
+  }, sorting?: {
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+  }): Promise<{ reports: Employee[]; total: number; page: number; totalPages: number; }> {
+    const { period, startDate, endDate, search, team, status } = filters;
+    const paginationConfig = pagination || { page: 1, limit: 25 };
+    const sortConfig = sorting || { sortBy: 'updatedAt', sortOrder: 'desc' };
     
     let dateCondition;
     const now = new Date();
@@ -479,21 +514,100 @@ export class DatabaseStorage implements IStorage {
       dateCondition = sql`${employees.updatedAt} >= ${periodStart.toISOString()}`;
     }
 
-    const whereClause = and(
+    const conditions = [
       isNotNull(employees.changesSummary),
       ne(employees.changesSummary, ''),
       dateCondition
-    );
+    ].filter(Boolean);
 
-    return await db
+    // Add search filter
+    if (search) {
+      conditions.push(
+        or(
+          ilike(employees.name, `%${search}%`),
+          ilike(employees.costCentre, `%${search}%`),
+          ilike(employees.team, `%${search}%`)
+        )
+      );
+    }
+
+    // Add team filter
+    if (team) {
+      conditions.push(eq(employees.team, team));
+    }
+
+    // Add status filter
+    if (status) {
+      conditions.push(eq(employees.status, status));
+    }
+
+    const whereClause = and(...conditions);
+
+    // Get total count for pagination
+    const [{ count: totalCount }] = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(employees)
+      .where(whereClause);
+
+    // Calculate pagination
+    const total = Number(totalCount);
+    const totalPages = Math.ceil(total / paginationConfig.limit);
+    const offset = (paginationConfig.page - 1) * paginationConfig.limit;
+
+    // Determine sort order
+    const sortColumn = sortConfig.sortBy === 'name' ? employees.name : employees.updatedAt;
+    const sortOrder = sortConfig.sortOrder === 'asc' ? asc(sortColumn) : desc(sortColumn);
+
+    const reports = await db
       .select()
       .from(employees)
       .where(whereClause)
-      .orderBy(desc(employees.updatedAt))
-      .limit(100);
+      .orderBy(sortOrder)
+      .limit(paginationConfig.limit)
+      .offset(offset);
+
+    return {
+      reports,
+      total,
+      page: paginationConfig.page,
+      totalPages,
+    };
   }
 
-  async getCostCentreBillingReport(): Promise<{ costCentre: string; totalBilling: number; employeeCount: number; averageRate: number }[]> {
+  async getCostCentreBillingReport(filters?: {
+    search?: string;
+  }, pagination?: {
+    page: number;
+    limit: number;
+  }, sorting?: {
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+  }): Promise<{ 
+    billing: { costCentre: string; totalBilling: number; employeeCount: number; averageRate: number }[];
+    total: number;
+    page: number;
+    totalPages: number;
+    totalBilling: number;
+    totalEmployees: number;
+  }> {
+    const searchFilter = filters?.search;
+    const paginationConfig = pagination || { page: 1, limit: 25 };
+    const sortConfig = sorting || { sortBy: 'totalBilling', sortOrder: 'desc' };
+
+    const baseConditions = [
+      isNotNull(employees.costCentre),
+      ne(employees.costCentre, ''),
+      ne(employees.status, 'deleted')
+    ];
+
+    // Add search filter
+    if (searchFilter) {
+      baseConditions.push(ilike(employees.costCentre, `%${searchFilter}%`));
+    }
+
+    const whereClause = and(...baseConditions);
+
+    // Get aggregated data first
     const result = await db
       .select({
         costCentre: employees.costCentre,
@@ -502,20 +616,65 @@ export class DatabaseStorage implements IStorage {
         averageRate: sql<number>`avg(case when status = 'active' and rate > 0 then rate else null end)`
       })
       .from(employees)
-      .where(and(
-        isNotNull(employees.costCentre),
-        ne(employees.costCentre, ''),
-        ne(employees.status, 'deleted')
-      ))
-      .groupBy(employees.costCentre)
-      .orderBy(sql`sum(case when status = 'active' then appx_billing else 0 end) desc`);
+      .where(whereClause)
+      .groupBy(employees.costCentre);
 
-    return result.map(row => ({
+    const billingData = result.map(row => ({
       costCentre: row.costCentre || 'Unknown',
       totalBilling: Number(row.totalBilling) || 0,
       employeeCount: Number(row.employeeCount) || 0,
       averageRate: Number(row.averageRate) || 0
     }));
+
+    // Calculate overall totals
+    const totalBilling = billingData.reduce((sum, item) => sum + item.totalBilling, 0);
+    const totalEmployees = billingData.reduce((sum, item) => sum + item.employeeCount, 0);
+
+    // Apply sorting
+    billingData.sort((a, b) => {
+      let aValue, bValue;
+      switch (sortConfig.sortBy) {
+        case 'costCentre':
+          aValue = a.costCentre;
+          bValue = b.costCentre;
+          break;
+        case 'employeeCount':
+          aValue = a.employeeCount;
+          bValue = b.employeeCount;
+          break;
+        case 'averageRate':
+          aValue = a.averageRate;
+          bValue = b.averageRate;
+          break;
+        case 'totalBilling':
+        default:
+          aValue = a.totalBilling;
+          bValue = b.totalBilling;
+          break;
+      }
+
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        return sortConfig.sortOrder === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
+      }
+      return sortConfig.sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+    });
+
+    // Apply pagination
+    const total = billingData.length;
+    const totalPages = Math.ceil(total / paginationConfig.limit);
+    const offset = (paginationConfig.page - 1) * paginationConfig.limit;
+    const paginatedBilling = billingData.slice(offset, offset + paginationConfig.limit);
+
+    return {
+      billing: paginatedBilling,
+      total,
+      page: paginationConfig.page,
+      totalPages,
+      totalBilling,
+      totalEmployees,
+    };
   }
 
   async getCostCentrePerformanceData(): Promise<{ 

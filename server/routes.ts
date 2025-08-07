@@ -304,14 +304,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Change reports
   app.get("/api/reports/changes", isAuthenticated, async (req, res) => {
     try {
-      const { period, startDate, endDate } = req.query;
+      const { period, startDate, endDate, search, team, status, page, limit, sortBy, sortOrder } = req.query;
       const filters = {
         period: period as 'week' | 'month' | 'year',
         startDate: startDate as string,
         endDate: endDate as string,
+        search: search as string,
+        team: team === 'all' ? undefined : team as string,
+        status: status === 'all' ? undefined : status as string,
       };
       
-      const changeReports = await storage.getChangeReports(filters);
+      const pagination = {
+        page: parseInt(page as string) || 1,
+        limit: parseInt(limit as string) || 25,
+      };
+      
+      const sorting = {
+        sortBy: (sortBy as string) || 'updatedAt',
+        sortOrder: (sortOrder as 'asc' | 'desc') || 'desc',
+      };
+      
+      const changeReports = await storage.getChangeReports(filters, pagination, sorting);
       res.json(changeReports);
     } catch (error) {
       console.error("Error fetching change reports:", error);
@@ -321,7 +334,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/reports/cost-centre-billing", isAuthenticated, async (req, res) => {
     try {
-      const costCentreBilling = await storage.getCostCentreBillingReport();
+      const { search, page, limit, sortBy, sortOrder } = req.query;
+      const filters = {
+        search: search as string,
+      };
+      
+      const pagination = {
+        page: parseInt(page as string) || 1,
+        limit: parseInt(limit as string) || 25,
+      };
+      
+      const sorting = {
+        sortBy: (sortBy as string) || 'totalBilling',
+        sortOrder: (sortOrder as 'asc' | 'desc') || 'desc',
+      };
+      
+      const costCentreBilling = await storage.getCostCentreBillingReport(filters, pagination, sorting);
       res.json(costCentreBilling);
     } catch (error) {
       console.error("Error fetching cost centre billing report:", error);
