@@ -36,6 +36,7 @@ This is an Employee Billing Management System built as a full-stack web applicat
 - Implemented real-time cache invalidation for Reports module to ensure immediate updates when employee data changes
 - Fixed synchronization issue between Employee and Reports modules - status changes now reflect immediately without manual refresh
 - Enhanced all employee mutations (create, update, delete, import, clear) to invalidate reports cache for seamless data consistency
+- Fixed Cost Centre Billing report CSV export to include billing percentage values matching the on-screen report data
 
 # User Preferences
 

@@ -142,14 +142,22 @@ export default function Reports() {
   const handleDownloadBillingReport = () => {
     if (!costCentreBilling.length) return;
     
-    // Create CSV content
-    const headers = ['Cost Centre', 'Total Monthly Billing ($)', 'Active Employees', 'Average Rate ($)'];
-    const csvData = costCentreBilling.map(cc => [
-      cc.costCentre,
-      cc.totalBilling.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      cc.employeeCount.toString(),
-      cc.averageRate.toFixed(2)
-    ]);
+    // Create CSV content with billing percentage
+    const headers = ['Cost Centre', 'Total Monthly Billing ($)', 'Active Employees', 'Average Rate ($)', 'Billing Percentage (%)'];
+    const csvData = costCentreBilling.map(cc => {
+      // Calculate billing percentage for each cost centre
+      const billingPercentage = billingStats.totalBilling > 0 
+        ? (cc.totalBilling / billingStats.totalBilling * 100) 
+        : 0;
+      
+      return [
+        cc.costCentre,
+        cc.totalBilling.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        cc.employeeCount.toString(),
+        cc.averageRate.toFixed(2),
+        billingPercentage.toFixed(1)
+      ];
+    });
     
     const csvContent = [
       headers.join(','),
