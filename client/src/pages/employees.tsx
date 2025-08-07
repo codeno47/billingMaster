@@ -133,8 +133,13 @@ export default function Employees() {
       return response.json();
     },
     onSuccess: (data) => {
+      // Invalidate all employee-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      // Invalidate reports cache to ensure real-time updates
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/changes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/cost-centre-billing"] });
+      
       toast({
         title: "Import successful",
         description: `Imported ${data.imported} employees. ${data.errors.length} errors.`,
@@ -166,9 +171,14 @@ export default function Employees() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all employee-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
       queryClient.invalidateQueries({ queryKey: ["/api/employees/teams"] });
+      // Invalidate reports cache to ensure real-time updates
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/changes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/cost-centre-billing"] });
+      
       toast({
         title: "Data cleared",
         description: "All employee data has been successfully cleared",

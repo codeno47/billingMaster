@@ -52,7 +52,13 @@ export default function EmployeeTable({
       await apiRequest('DELETE', `/api/employees/${id}`);
     },
     onSuccess: () => {
+      // Invalidate all employee-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
+      // Invalidate reports cache to ensure real-time updates
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/changes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/reports/cost-centre-billing"] });
+      
       toast({
         title: "Employee deleted",
         description: "Employee has been successfully deleted",
