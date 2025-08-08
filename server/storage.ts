@@ -303,7 +303,9 @@ export class DatabaseStorage implements IStorage {
       const user = await this.getUser(userId);
       if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
         const costCentreConditions = accessibleCostCentres.map(cc => eq(employees.costCentre, cc));
-        if (costCentreConditions.length > 0) {
+        if (costCentreConditions.length === 1) {
+          conditions.push(costCentreConditions[0]);
+        } else if (costCentreConditions.length > 1) {
           conditions.push(or(...costCentreConditions));
         }
       }
@@ -491,7 +493,9 @@ export class DatabaseStorage implements IStorage {
       const user = await this.getUser(userId);
       if (user?.role !== 'admin') {
         const costCentreConditions = accessibleCostCentres.map(cc => eq(employees.costCentre, cc));
-        if (costCentreConditions.length > 0) {
+        if (costCentreConditions.length === 1) {
+          conditions.push(costCentreConditions[0]);
+        } else if (costCentreConditions.length > 1) {
           conditions.push(or(...costCentreConditions));
         }
       }
@@ -562,7 +566,9 @@ export class DatabaseStorage implements IStorage {
       // Add cost centre filtering for non-admin users
       if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
         const costCentreConditions = accessibleCostCentres.map(cc => eq(employees.costCentre, cc));
-        if (costCentreConditions.length > 0) {
+        if (costCentreConditions.length === 1) {
+          whereConditions.push(costCentreConditions[0]);
+        } else if (costCentreConditions.length > 1) {
           whereConditions.push(or(...costCentreConditions));
         }
       }
@@ -604,7 +610,9 @@ export class DatabaseStorage implements IStorage {
       // Add cost centre filtering for non-admin users
       if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
         const costCentreConditions = accessibleCostCentres.map(cc => eq(employees.costCentre, cc));
-        if (costCentreConditions.length > 0) {
+        if (costCentreConditions.length === 1) {
+          whereConditions.push(costCentreConditions[0]);
+        } else if (costCentreConditions.length > 1) {
           whereConditions.push(or(...costCentreConditions));
         }
       }
@@ -642,7 +650,9 @@ export class DatabaseStorage implements IStorage {
       // Add cost centre filtering for non-admin users
       if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
         const costCentreConditions = accessibleCostCentres.map(cc => eq(employees.costCentre, cc));
-        if (costCentreConditions.length > 0) {
+        if (costCentreConditions.length === 1) {
+          whereConditions.push(costCentreConditions[0]);
+        } else if (costCentreConditions.length > 1) {
           whereConditions.push(or(...costCentreConditions));
         }
       }
@@ -722,7 +732,9 @@ export class DatabaseStorage implements IStorage {
       // Add cost centre filtering for non-admin users
       if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
         const costCentreConditions = accessibleCostCentres.map(cc => eq(employees.costCentre, cc));
-        if (costCentreConditions.length > 0) {
+        if (costCentreConditions.length === 1) {
+          conditions.push(costCentreConditions[0]);
+        } else if (costCentreConditions.length > 1) {
           conditions.push(or(...costCentreConditions));
         }
       }
@@ -784,6 +796,7 @@ export class DatabaseStorage implements IStorage {
 
   async getCostCentreBillingReport(filters?: {
     search?: string;
+    userId?: number;
   }, pagination?: {
     page: number;
     limit: number;
@@ -798,7 +811,7 @@ export class DatabaseStorage implements IStorage {
     totalBilling: number;
     totalEmployees: number;
   }> {
-    const searchFilter = filters?.search;
+    const { search: searchFilter, userId } = filters || {};
     const paginationConfig = pagination || { page: 1, limit: 25 };
     const sortConfig = sorting || { sortBy: 'totalBilling', sortOrder: 'desc' };
 
@@ -807,6 +820,34 @@ export class DatabaseStorage implements IStorage {
       ne(employees.costCentre, ''),
       ne(employees.status, 'deleted')
     ];
+
+    // Add cost centre filtering for non-admin users
+    if (userId) {
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      
+      // If user is not admin and has no cost centre access, return empty result
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return {
+          billing: [],
+          total: 0,
+          page: paginationConfig.page,
+          totalPages: 0,
+          totalBilling: 0,
+          totalEmployees: 0
+        };
+      }
+      
+      // Add cost centre filtering for non-admin users
+      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
+        const costCentreConditions = accessibleCostCentres.map(cc => eq(employees.costCentre, cc));
+        if (costCentreConditions.length === 1) {
+          baseConditions.push(costCentreConditions[0]);
+        } else if (costCentreConditions.length > 1) {
+          baseConditions.push(or(...costCentreConditions));
+        }
+      }
+    }
 
     // Add search filter
     if (searchFilter) {
@@ -909,14 +950,38 @@ export class DatabaseStorage implements IStorage {
       });
     }
 
+    // Build conditions for cost centre selection
+    const costCentreConditions = [
+      isNotNull(employees.costCentre),
+      ne(employees.costCentre, ''),
+      ne(employees.status, 'deleted')
+    ];
+
+    // Add cost centre filtering for non-admin users
+    if (userId) {
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      
+      // If user is not admin and has no cost centre access, return empty result
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return [];
+      }
+      
+      // Add cost centre filtering for non-admin users
+      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
+        const costCentreFilterConditions = accessibleCostCentres.map(cc => eq(employees.costCentre, cc));
+        if (costCentreFilterConditions.length === 1) {
+          costCentreConditions.push(costCentreFilterConditions[0]);
+        } else if (costCentreFilterConditions.length > 1) {
+          costCentreConditions.push(or(...costCentreFilterConditions));
+        }
+      }
+    }
+
     const costCentres = await db
       .selectDistinct({ costCentre: employees.costCentre })
       .from(employees)
-      .where(and(
-        isNotNull(employees.costCentre),
-        ne(employees.costCentre, ''),
-        ne(employees.status, 'deleted')
-      ));
+      .where(and(...costCentreConditions));
 
     const performanceData = [];
 
@@ -1149,7 +1214,11 @@ export class DatabaseStorage implements IStorage {
         .selectDistinct({ role: employees.role })
         .from(employees)
         .where(and(
-          ...(accessibleCostCentres.length > 0 ? [or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc)))] : []),
+          ...(accessibleCostCentres.length === 1 
+            ? [eq(employees.costCentre, accessibleCostCentres[0])] 
+            : accessibleCostCentres.length > 1 
+            ? [or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc)))]
+            : []),
           ne(employees.status, 'deleted'),
           isNotNull(employees.role),
           ne(employees.role, '')
@@ -1218,7 +1287,11 @@ export class DatabaseStorage implements IStorage {
         .selectDistinct({ team: employees.team })
         .from(employees)
         .where(and(
-          ...(accessibleCostCentres.length > 0 ? [or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc)))] : []),
+          ...(accessibleCostCentres.length === 1 
+            ? [eq(employees.costCentre, accessibleCostCentres[0])] 
+            : accessibleCostCentres.length > 1 
+            ? [or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc)))]
+            : []),
           ne(employees.status, 'deleted'),
           isNotNull(employees.team),
           ne(employees.team, '')
