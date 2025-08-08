@@ -83,10 +83,11 @@ interface UserFormProps {
 
 function UserForm({ user, onSuccess }: UserFormProps) {
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
   const isEditing = !!user;
   const [selectedCostCentres, setSelectedCostCentres] = useState<number[]>([]);
 
-  // Fetch cost centres for selection
+  // Fetch cost centres for selection - admin users can see all cost centres
   const { data: costCentres = [] } = useQuery<CostCentre[]>({
     queryKey: ["/api/config/cost-centres"],
   });
@@ -271,7 +272,7 @@ function UserForm({ user, onSuccess }: UserFormProps) {
                     <div className="text-sm text-gray-600">
                       {form.watch('role') === 'admin' 
                         ? 'Administrators automatically have access to all cost centres.' 
-                        : 'Select which cost centres this finance manager can access. Leave empty for no access.'}
+                        : `Select which cost centres this finance manager can access. ${currentUser?.role === 'admin' ? 'As an admin, you can assign any cost centre.' : ''} Leave empty for no access.`}
                     </div>
                     
                     {form.watch('role') !== 'admin' && (
