@@ -135,7 +135,7 @@ export interface IStorage {
   getCostCentrePerformanceData(userId?: number): Promise<{ costCentre: string; monthlyData: { month: string; billing: number; employees: number; averageRate: number }[] }[]>;
 
   // Configuration operations
-  getCostCentres(): Promise<CostCentre[]>;
+  getCostCentres(userId?: number): Promise<CostCentre[]>;
   createCostCentre(costCentre: InsertCostCentre): Promise<CostCentre>;
   updateCostCentre(id: number, costCentre: UpdateCostCentre): Promise<CostCentre>;
   deleteCostCentre(id: number): Promise<void>;
@@ -150,12 +150,12 @@ export interface IStorage {
   updateShift(id: number, shift: UpdateShift): Promise<Shift>;
   deleteShift(id: number): Promise<void>;
 
-  getRoles(): Promise<Role[]>;
+  getRoles(userId?: number): Promise<Role[]>;
   createRole(role: InsertRole): Promise<Role>;
   updateRole(id: number, role: UpdateRole): Promise<Role>;
   deleteRole(id: number): Promise<void>;
 
-  getTeams(): Promise<Team[]>;
+  getTeams(userId?: number): Promise<Team[]>;
   createTeam(team: InsertTeam): Promise<Team>;
   updateTeam(id: number, team: UpdateTeam): Promise<Team>;
   deleteTeam(id: number): Promise<void>;
@@ -1019,7 +1019,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Configuration operations
-  async getCostCentres(): Promise<CostCentre[]> {
+  async getCostCentres(userId?: number): Promise<CostCentre[]> {
+    if (userId) {
+      const user = await this.getUser(userId);
+      
+      // If user is not admin, return only their assigned cost centres
+      if (user?.role !== 'admin') {
+        const userCostCentres = await this.getUserCostCentres(userId);
+        return userCostCentres;
+      }
+    }
+    
+    // For admin users or when no userId provided, return all cost centres
     return await db.select().from(costCentres).orderBy(costCentres.code);
   }
 
@@ -1100,7 +1111,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(shifts.id, id));
   }
 
-  async getRoles(): Promise<Role[]> {
+  async getRoles(userId?: number): Promise<Role[]> {
+    if (userId) {
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      
+      // If user is not admin and has no cost centre access, return empty result
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return [];
+      }
+      
+      // For non-admin users, return only roles used in their accessible cost centres
+      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
+        const rolesInUse = await db
+          .selectDistinct({ role: employees.role })
+          .from(employees)
+          .where(and(
+            or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc))),
+            ne(employees.status, 'deleted'),
+            isNotNull(employees.role),
+            ne(employees.role, '')
+          ));
+        
+        // Get full role objects for roles that are in use
+        const roleNames = rolesInUse.map(r => r.role).filter(Boolean);
+        if (roleNames.length === 0) return [];
+        
+        return await db
+          .select()
+          .from(roles)
+          .where(and(
+            eq(roles.isActive, true),
+            or(...roleNames.map(name => eq(roles.title, name!)))
+          ))
+          .orderBy(roles.title);
+      }
+    }
+    
+    // For admin users or when no userId provided, return all roles
     return await db.select().from(roles).where(eq(roles.isActive, true)).orderBy(roles.title);
   }
 
@@ -1128,7 +1176,44 @@ export class DatabaseStorage implements IStorage {
       .where(eq(roles.id, id));
   }
 
-  async getTeams(): Promise<Team[]> {
+  async getTeams(userId?: number): Promise<Team[]> {
+    if (userId) {
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      
+      // If user is not admin and has no cost centre access, return empty result
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return [];
+      }
+      
+      // For non-admin users, return only teams used in their accessible cost centres
+      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
+        const teamsInUse = await db
+          .selectDistinct({ team: employees.team })
+          .from(employees)
+          .where(and(
+            or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc))),
+            ne(employees.status, 'deleted'),
+            isNotNull(employees.team),
+            ne(employees.team, '')
+          ));
+        
+        // Get full team objects for teams that are in use
+        const teamNames = teamsInUse.map(t => t.team).filter(Boolean);
+        if (teamNames.length === 0) return [];
+        
+        return await db
+          .select()
+          .from(teams)
+          .where(and(
+            eq(teams.isActive, true),
+            or(...teamNames.map(name => eq(teams.name, name!)))
+          ))
+          .orderBy(teams.name);
+      }
+    }
+    
+    // For admin users or when no userId provided, return all teams
     return await db.select().from(teams).where(eq(teams.isActive, true)).orderBy(teams.name);
   }
 

@@ -367,9 +367,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Configuration routes (admin only)
   // Cost Centre routes
-  app.get("/api/config/cost-centres", isAuthenticated, async (req, res) => {
+  app.get("/api/config/cost-centres", isAuthenticated, async (req: any, res) => {
     try {
-      const costCentres = await storage.getCostCentres();
+      const costCentres = await storage.getCostCentres(req.user.id);
       res.json(costCentres);
     } catch (error) {
       console.error("Error fetching cost centres:", error);
@@ -490,9 +490,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Role routes
-  app.get("/api/config/roles", isAuthenticated, async (req, res) => {
+  app.get("/api/config/roles", isAuthenticated, async (req: any, res) => {
     try {
-      const roles = await storage.getRoles();
+      const roles = await storage.getRoles(req.user.id);
       res.json(roles);
     } catch (error) {
       console.error("Error fetching roles:", error);
@@ -531,9 +531,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Team routes
-  app.get("/api/config/teams", isAuthenticated, async (req, res) => {
+  app.get("/api/config/teams", isAuthenticated, async (req: any, res) => {
     try {
-      const teams = await storage.getTeams();
+      const teams = await storage.getTeams(req.user.id);
       res.json(teams);
     } catch (error) {
       console.error("Error fetching teams:", error);
