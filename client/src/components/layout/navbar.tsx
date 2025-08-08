@@ -42,7 +42,28 @@ function PasswordChangeDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
   const passwordChangeMutation = useMutation({
     mutationFn: async (data: PasswordChangeData) => {
       const response = await apiRequest("PUT", "/api/auth/change-password", data);
-      return response.json();
+      
+      // Check if response is successful
+      if (!response.ok) {
+        const errorData = await response.text();
+        let errorMessage = "Failed to change password";
+        try {
+          const parsedError = JSON.parse(errorData);
+          errorMessage = parsedError.message || errorMessage;
+        } catch {
+          // If parsing fails, use the text response
+          errorMessage = errorData || errorMessage;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      // Try to parse JSON response
+      try {
+        return await response.json();
+      } catch {
+        // If JSON parsing fails but response was successful, assume success
+        return { message: "Password changed successfully" };
+      }
     },
     onSuccess: () => {
       toast({
