@@ -22,20 +22,33 @@ import { isUnauthorizedError } from "@/lib/authUtils";
 // User form schema
 const userFormSchema = z.object({
   username: z.string().min(1, "Username is required").min(3, "Username must be at least 3 characters"),
-  password: z.string().min(1, "Password is required").min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required").min(5, "Password must be at least 5 characters").max(12, "Password must not exceed 12 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
   email: z.string().email("Please enter a valid email address").optional(),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   role: z.enum(["admin", "finance"], { required_error: "Please select a role" }),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
-const updateUserFormSchema = userFormSchema.extend({
-  password: z.string().min(6, "Password must be at least 6 characters").optional(),
-}).partial().extend({
+const updateUserFormSchema = z.object({
   username: z.string().min(1, "Username is required").min(3, "Username must be at least 3 characters"),
+  password: z.string().min(5, "Password must be at least 5 characters").max(12, "Password must not exceed 12 characters").optional(),
+  confirmPassword: z.string().optional(),
+  email: z.string().email("Please enter a valid email address").optional(),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   role: z.enum(["admin", "finance"], { required_error: "Please select a role" }),
+}).refine((data) => {
+  if (data.password && data.password.length > 0) {
+    return data.password === data.confirmPassword;
+  }
+  return true;
+}, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 type UserFormData = z.infer<typeof userFormSchema>;
@@ -66,6 +79,7 @@ function UserForm({ user, onSuccess }: UserFormProps) {
     defaultValues: {
       username: user?.username || "",
       password: "",
+      confirmPassword: "",
       email: user?.email || "",
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
@@ -78,14 +92,17 @@ function UserForm({ user, onSuccess }: UserFormProps) {
       const url = isEditing ? `/api/users/${user.id}` : '/api/users';
       const method = isEditing ? 'PUT' : 'POST';
       
+      // Remove confirmPassword from data before sending to API
+      const { confirmPassword, ...apiData } = data;
+      
       // For updates, remove password if it's empty
-      if (isEditing && !data.password) {
-        const { password, ...dataWithoutPassword } = data;
+      if (isEditing && !apiData.password) {
+        const { password, ...dataWithoutPassword } = apiData;
         const response = await apiRequest(method, url, dataWithoutPassword);
         return response.json();
       }
       
-      const response = await apiRequest(method, url, data);
+      const response = await apiRequest(method, url, apiData);
       return response.json();
     },
     onSuccess: () => {
@@ -209,7 +226,21 @@ function UserForm({ user, onSuccess }: UserFormProps) {
               <FormItem>
                 <FormLabel>Password {isEditing ? "(leave blank to keep current)" : "*"}</FormLabel>
                 <FormControl>
-                  <Input type="password" {...field} />
+                  <Input type="password" {...field} placeholder={isEditing ? "" : "5-12 characters"} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Confirm Password {isEditing ? "(if changing password)" : "*"}</FormLabel>
+                <FormControl>
+                  <Input type="password" {...field} placeholder={isEditing ? "" : "Confirm your password"} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
