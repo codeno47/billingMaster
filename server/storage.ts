@@ -1112,43 +1112,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getRoles(userId?: number): Promise<Role[]> {
+    // For config/settings page, return all configuration roles for admin users
+    // For employee filters, this should return actual roles used in employee data
     if (userId) {
-      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
       const user = await this.getUser(userId);
       
-      // If user is not admin and has no cost centre access, return empty result
-      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+      // For admin users, return all configuration roles
+      if (user?.role === 'admin') {
+        return await db.select().from(roles).where(eq(roles.isActive, true)).orderBy(roles.title);
+      }
+      
+      // For non-admin users, return distinct roles from their accessible employee data
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      
+      if (accessibleCostCentres.length === 0) {
         return [];
       }
       
-      // For non-admin users, return only roles used in their accessible cost centres
-      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
-        const rolesInUse = await db
-          .selectDistinct({ role: employees.role })
-          .from(employees)
-          .where(and(
-            or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc))),
-            ne(employees.status, 'deleted'),
-            isNotNull(employees.role),
-            ne(employees.role, '')
-          ));
-        
-        // Get full role objects for roles that are in use
-        const roleNames = rolesInUse.map(r => r.role).filter(Boolean);
-        if (roleNames.length === 0) return [];
-        
-        return await db
-          .select()
-          .from(roles)
-          .where(and(
-            eq(roles.isActive, true),
-            or(...roleNames.map(name => eq(roles.title, name!)))
-          ))
-          .orderBy(roles.title);
-      }
+      const rolesInUse = await db
+        .selectDistinct({ role: employees.role })
+        .from(employees)
+        .where(and(
+          or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc))),
+          ne(employees.status, 'deleted'),
+          isNotNull(employees.role),
+          ne(employees.role, '')
+        ))
+        .orderBy(employees.role);
+      
+      // Convert to Role-like objects for consistency
+      return rolesInUse.map(r => ({
+        id: 0, // Not used for filtering
+        title: r.role!,
+        department: '',
+        level: '',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }));
     }
     
-    // For admin users or when no userId provided, return all roles
+    // Default: return all configuration roles
     return await db.select().from(roles).where(eq(roles.isActive, true)).orderBy(roles.title);
   }
 
@@ -1177,43 +1181,47 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTeams(userId?: number): Promise<Team[]> {
+    // For config/settings page, return all configuration teams for admin users
+    // For employee filters, this should return actual teams used in employee data
     if (userId) {
-      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
       const user = await this.getUser(userId);
       
-      // If user is not admin and has no cost centre access, return empty result
-      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+      // For admin users, return all configuration teams
+      if (user?.role === 'admin') {
+        return await db.select().from(teams).where(eq(teams.isActive, true)).orderBy(teams.name);
+      }
+      
+      // For non-admin users, return distinct teams from their accessible employee data
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      
+      if (accessibleCostCentres.length === 0) {
         return [];
       }
       
-      // For non-admin users, return only teams used in their accessible cost centres
-      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
-        const teamsInUse = await db
-          .selectDistinct({ team: employees.team })
-          .from(employees)
-          .where(and(
-            or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc))),
-            ne(employees.status, 'deleted'),
-            isNotNull(employees.team),
-            ne(employees.team, '')
-          ));
-        
-        // Get full team objects for teams that are in use
-        const teamNames = teamsInUse.map(t => t.team).filter(Boolean);
-        if (teamNames.length === 0) return [];
-        
-        return await db
-          .select()
-          .from(teams)
-          .where(and(
-            eq(teams.isActive, true),
-            or(...teamNames.map(name => eq(teams.name, name!)))
-          ))
-          .orderBy(teams.name);
-      }
+      const teamsInUse = await db
+        .selectDistinct({ team: employees.team })
+        .from(employees)
+        .where(and(
+          or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc))),
+          ne(employees.status, 'deleted'),
+          isNotNull(employees.team),
+          ne(employees.team, '')
+        ))
+        .orderBy(employees.team);
+      
+      // Convert to Team-like objects for consistency
+      return teamsInUse.map(t => ({
+        id: 0, // Not used for filtering
+        name: t.team!,
+        department: '',
+        manager: '',
+        isActive: true,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }));
     }
     
-    // For admin users or when no userId provided, return all teams
+    // Default: return all configuration teams
     return await db.select().from(teams).where(eq(teams.isActive, true)).orderBy(teams.name);
   }
 
