@@ -149,6 +149,15 @@ export const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(5, "New password must be at least 5 characters").max(12, "New password must not exceed 12 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your new password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "New passwords do not match",
+  path: ["confirmPassword"],
+});
+
 export const insertEmployeeSchema = createInsertSchema(employees).omit({
   id: true,
   createdAt: true,
@@ -211,6 +220,7 @@ export const updateTeamSchema = insertTeamSchema.partial();
 
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type ChangePassword = z.infer<typeof changePasswordSchema>;
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type User = typeof users.$inferSelect;
 export type Employee = typeof employees.$inferSelect;

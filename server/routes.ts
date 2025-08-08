@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, requireRole } from "./auth";
-import { insertEmployeeSchema, updateEmployeeSchema, insertBillingRateSchema, insertProjectSchema, loginSchema, insertUserSchema, updateUserSchema } from "@shared/schema";
+import { insertEmployeeSchema, updateEmployeeSchema, insertBillingRateSchema, insertProjectSchema, loginSchema, insertUserSchema, updateUserSchema, changePasswordSchema } from "@shared/schema";
 import { parseCSV } from "./services/csv-parser";
 import multer from "multer";
 
@@ -633,6 +633,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Error deleting user:", error);
       res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
+  // Password change endpoint (any authenticated user can change their own password)
+  app.put("/api/users/change-password", isAuthenticated, async (req: any, res) => {
+    try {
+      const validatedData = changePasswordSchema.parse(req.body);
+      const userId = req.session.userId;
+      
+      await storage.changeUserPassword(userId, validatedData);
+      res.json({ message: "Password changed successfully" });
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      if (error.message === "Current password is incorrect") {
+        res.status(400).json({ message: "Current password is incorrect" });
+      } else {
+        res.status(400).json({ message: "Failed to change password", error: error.message });
+      }
     }
   });
 

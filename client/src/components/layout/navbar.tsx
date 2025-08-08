@@ -1,17 +1,139 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { useAuth } from "@/hooks/useAuth";
-import { Bell, LogOut } from "lucide-react";
+import { Bell, LogOut, User, KeyRound, ChevronDown } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+// Password change schema
+const passwordChangeSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required"),
+  newPassword: z.string().min(5, "New password must be at least 5 characters").max(12, "New password must not exceed 12 characters"),
+  confirmPassword: z.string().min(1, "Please confirm your new password"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
+  message: "New passwords do not match",
+  path: ["confirmPassword"],
+});
+
+type PasswordChangeData = z.infer<typeof passwordChangeSchema>;
+
+function PasswordChangeDialog({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { toast } = useToast();
+
+  const form = useForm<PasswordChangeData>({
+    resolver: zodResolver(passwordChangeSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const passwordChangeMutation = useMutation({
+    mutationFn: async (data: PasswordChangeData) => {
+      const response = await apiRequest("PUT", "/api/users/change-password", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Password changed",
+        description: "Your password has been successfully updated",
+      });
+      form.reset();
+      onClose();
+    },
+    onError: (error: any) => {
+      const errorMessage = error.message || "Failed to change password";
+      toast({
+        title: "Password change failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const onSubmit = (data: PasswordChangeData) => {
+    passwordChangeMutation.mutate(data);
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Change Password</DialogTitle>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="currentPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Current Password *</FormLabel>
+                  <FormControl>
+                    <Input type="password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="newPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>New Password *</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="5-12 characters" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="confirmPassword"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Confirm New Password *</FormLabel>
+                  <FormControl>
+                    <Input type="password" placeholder="Confirm your new password" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-end space-x-2 pt-4">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={passwordChangeMutation.isPending}>
+                {passwordChangeMutation.isPending ? "Changing..." : "Change Password"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export default function Navbar() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, setLocation] = useLocation();
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
@@ -80,29 +202,41 @@ export default function Navbar() {
               <Bell className="w-5 h-5" />
             </Button>
             
-            <div className="flex items-center space-x-3">
-              <Avatar>
-                <AvatarFallback className="bg-primary text-white">
-                  {getInitials(user?.firstName, user?.lastName)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-sm">
-                <div className="font-medium text-gray-700">{getDisplayName()}</div>
-                <div className="text-gray-500">{getRoleDisplay()}</div>
-              </div>
-            </div>
-            
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleLogout}
-              className="text-gray-600 hover:text-red-600"
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center space-x-3 hover:bg-gray-100">
+                  <Avatar>
+                    <AvatarFallback className="bg-primary text-white">
+                      {getInitials(user?.firstName, user?.lastName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="text-sm text-left">
+                    <div className="font-medium text-gray-700">{getDisplayName()}</div>
+                    <div className="text-gray-500">{getRoleDisplay()}</div>
+                  </div>
+                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => setShowPasswordDialog(true)}>
+                  <KeyRound className="w-4 h-4 mr-2" />
+                  Change Password
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
+      
+      <PasswordChangeDialog 
+        isOpen={showPasswordDialog} 
+        onClose={() => setShowPasswordDialog(false)} 
+      />
     </nav>
   );
 }

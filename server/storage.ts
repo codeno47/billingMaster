@@ -33,6 +33,7 @@ import {
   type Team,
   type InsertTeam,
   type UpdateTeam,
+  type ChangePassword,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, like, ilike, and, or, desc, asc, sql, ne, isNotNull, isNull, count, sum } from "drizzle-orm";
@@ -47,6 +48,7 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   deleteUser(id: number): Promise<void>;
+  changeUserPassword(userId: number, passwordData: ChangePassword): Promise<void>;
   initializeUsers(): Promise<void>;
 
   // Employee operations
@@ -222,6 +224,25 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUser(id: number): Promise<void> {
     await db.delete(users).where(eq(users.id, id));
+  }
+
+  async changeUserPassword(userId: number, passwordData: ChangePassword): Promise<void> {
+    // First verify the current password
+    const user = await this.getUser(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    // Simple password comparison (in production, this should use proper hashing)
+    if (user.password !== passwordData.currentPassword) {
+      throw new Error("Current password is incorrect");
+    }
+    
+    // Update with new password
+    await db
+      .update(users)
+      .set({ password: passwordData.newPassword, updatedAt: new Date() })
+      .where(eq(users.id, userId));
   }
 
   // Employee operations
