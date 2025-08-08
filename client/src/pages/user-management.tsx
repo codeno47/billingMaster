@@ -36,7 +36,13 @@ const userFormSchema = z.object({
 
 const updateUserFormSchema = z.object({
   username: z.string().min(1, "Username is required").min(3, "Username must be at least 3 characters"),
-  password: z.string().min(5, "Password must be at least 5 characters").max(12, "Password must not exceed 12 characters").optional(),
+  password: z.string().optional().refine((val) => {
+    // If password is provided and not empty, it must meet length requirements
+    if (val && val.trim().length > 0) {
+      return val.length >= 5 && val.length <= 12;
+    }
+    return true; // Allow empty/undefined passwords
+  }, "Password must be between 5-12 characters if provided"),
   confirmPassword: z.string().optional(),
   email: z.string().email("Please enter a valid email address").optional(),
   firstName: z.string().min(1, "First name is required"),
@@ -44,7 +50,7 @@ const updateUserFormSchema = z.object({
   role: z.enum(["admin", "finance"], { required_error: "Please select a role" }),
   costCentreIds: z.array(z.number()).optional(),
 }).refine((data) => {
-  if (data.password && data.password.length > 0) {
+  if (data.password && data.password.trim().length > 0) {
     return data.password === data.confirmPassword;
   }
   return true;
@@ -135,7 +141,6 @@ function UserForm({ user, onSuccess }: UserFormProps) {
         const response = await apiRequest(method, url, dataWithoutPassword);
         return response.json();
       }
-      
       const response = await apiRequest(method, url, apiData);
       return response.json();
     },
