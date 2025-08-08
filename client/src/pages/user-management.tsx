@@ -129,8 +129,8 @@ function UserForm({ user, onSuccess }: UserFormProps) {
       // Remove confirmPassword from data before sending to API
       const { confirmPassword, ...apiData } = data;
       
-      // For updates, remove password if it's empty
-      if (isEditing && !apiData.password) {
+      // For updates, remove password if it's empty or just whitespace
+      if (isEditing && (!apiData.password || apiData.password.trim() === '')) {
         const { password, ...dataWithoutPassword } = apiData;
         const response = await apiRequest(method, url, dataWithoutPassword);
         return response.json();
