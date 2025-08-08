@@ -640,9 +640,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/change-password", isAuthenticated, async (req: any, res) => {
     try {
       const validatedData = changePasswordSchema.parse(req.body);
-      const userId = req.user.id; // Get user ID from authenticated user object
+      const userId = req.user.id;
       
-      await storage.changeUserPassword(userId, validatedData);
+      console.log("Password change debug:", {
+        userId,
+        userIdType: typeof userId,
+        userObject: req.user,
+        sessionUserId: req.session.userId
+      });
+      
+      // Ensure userId is a valid number
+      const parsedUserId = parseInt(userId);
+      if (isNaN(parsedUserId)) {
+        console.error("Invalid user ID:", userId);
+        return res.status(400).json({ message: "Invalid user session" });
+      }
+      
+      await storage.changeUserPassword(parsedUserId, validatedData);
       res.json({ message: "Password changed successfully" });
     } catch (error: any) {
       console.error("Error changing password:", error);
