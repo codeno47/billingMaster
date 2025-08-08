@@ -267,6 +267,7 @@ export class DatabaseStorage implements IStorage {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    userId?: number; // For filtering based on user permissions
   } = {}): Promise<{ employees: Employee[]; total: number }> {
     const {
       search,
@@ -277,8 +278,20 @@ export class DatabaseStorage implements IStorage {
       offset = 0,
       limit = 50,
       sortBy = 'name',
-      sortOrder = 'asc'
+      sortOrder = 'asc',
+      userId
     } = filters;
+
+    // Get user's accessible cost centres for filtering
+    let accessibleCostCentres: string[] = [];
+    if (userId) {
+      accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      // If user is not admin and has no cost centre access, return empty result
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return { employees: [], total: 0 };
+      }
+    }
 
     const conditions = [];
 

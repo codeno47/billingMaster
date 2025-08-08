@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,7 +12,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Edit, Trash2, Users, Shield, AlertTriangle } from "lucide-react";
+import { Plus, Edit, Trash2, Users, Shield, AlertTriangle, Building2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/common/protected-route";
@@ -84,6 +84,18 @@ interface UserFormProps {
 function UserForm({ user, onSuccess }: UserFormProps) {
   const { toast } = useToast();
   const isEditing = !!user;
+  const [selectedCostCentres, setSelectedCostCentres] = useState<number[]>([]);
+
+  // Fetch cost centres for selection
+  const { data: costCentres = [] } = useQuery<CostCentre[]>({
+    queryKey: ["/api/config/cost-centres"],
+  });
+
+  // Fetch user's current cost centres if editing
+  const { data: userCostCentres = [] } = useQuery<CostCentre[]>({
+    queryKey: ["/api/users", user?.id, "cost-centres"],
+    enabled: isEditing && !!user?.id,
+  });
 
   const form = useForm<UserFormData | UpdateUserFormData>({
     resolver: zodResolver(isEditing ? updateUserFormSchema : userFormSchema),
@@ -95,8 +107,18 @@ function UserForm({ user, onSuccess }: UserFormProps) {
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       role: user?.role || "finance",
+      costCentreIds: [],
     },
   });
+
+  // Update selected cost centres when user data loads
+  useEffect(() => {
+    if (userCostCentres.length > 0) {
+      const costCentreIds = userCostCentres.map(cc => cc.id);
+      setSelectedCostCentres(costCentreIds);
+      form.setValue('costCentreIds', costCentreIds);
+    }
+  }, [userCostCentres, form]);
 
   const mutation = useMutation({
     mutationFn: async (data: UserFormData | UpdateUserFormData) => {
@@ -145,7 +167,12 @@ function UserForm({ user, onSuccess }: UserFormProps) {
   });
 
   const onSubmit = (data: UserFormData | UpdateUserFormData) => {
-    mutation.mutate(data);
+    // Include selected cost centres in the submission
+    const submitData = {
+      ...data,
+      costCentreIds: form.watch('role') === 'admin' ? [] : selectedCostCentres
+    };
+    mutation.mutate(submitData);
   };
 
   return (
@@ -229,7 +256,83 @@ function UserForm({ user, onSuccess }: UserFormProps) {
               </FormItem>
             )}
           />
+        </div>
 
+        {/* Cost Centre Assignment Section */}
+        <div className="space-y-4">
+          <FormField
+            control={form.control}
+            name="costCentreIds"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cost Centre Access {form.watch('role') === 'admin' ? '(Admin has access to all)' : ''}</FormLabel>
+                <FormControl>
+                  <div className="space-y-3">
+                    <div className="text-sm text-gray-600">
+                      {form.watch('role') === 'admin' 
+                        ? 'Administrators automatically have access to all cost centres.' 
+                        : 'Select which cost centres this finance manager can access. Leave empty for no access.'}
+                    </div>
+                    
+                    {form.watch('role') !== 'admin' && (
+                      <>
+                        <Select 
+                          onValueChange={(value) => {
+                            const costCentreId = parseInt(value);
+                            if (!selectedCostCentres.includes(costCentreId)) {
+                              const newSelection = [...selectedCostCentres, costCentreId];
+                              setSelectedCostCentres(newSelection);
+                              form.setValue('costCentreIds', newSelection);
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Add cost centre access..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {costCentres.filter(cc => !selectedCostCentres.includes(cc.id)).map((costCentre) => (
+                              <SelectItem key={costCentre.id} value={costCentre.id.toString()}>
+                                {costCentre.code} - {costCentre.description}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        
+                        <div className="flex flex-wrap gap-2">
+                          {selectedCostCentres.map((costCentreId) => {
+                            const costCentre = costCentres.find(cc => cc.id === costCentreId);
+                            if (!costCentre) return null;
+                            
+                            return (
+                              <Badge key={costCentreId} variant="outline" className="flex items-center gap-1">
+                                <Building2 className="w-3 h-3" />
+                                {costCentre.code}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newSelection = selectedCostCentres.filter(id => id !== costCentreId);
+                                    setSelectedCostCentres(newSelection);
+                                    form.setValue('costCentreIds', newSelection);
+                                  }}
+                                  className="ml-1 hover:bg-gray-200 rounded-full p-0.5"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </Badge>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
             name="password"

@@ -40,6 +40,10 @@ This is the Elixr Labs Billing System built as a full-stack web application. The
 - Added profile dropdown menu in navbar with password change functionality for all authenticated users
 - Implemented secure password change system with validation and proper authentication checks
 - Enhanced navbar design from simple logout button to comprehensive user profile dropdown with avatar display
+- Implemented role-based cost center access control for finance managers
+- Added user-cost center relationship management with multi-select assignment interface
+- Enhanced employee data filtering to restrict finance managers to their assigned cost centers only
+- Updated user management interface with cost center assignment functionality (admin users have access to all, finance users require specific assignments)
 
 # User Preferences
 

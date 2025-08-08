@@ -84,6 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit: parseInt(limit),
         sortBy,
         sortOrder,
+        userId: req.user.id, // Pass user ID for cost center filtering
       });
 
       res.json({
@@ -267,9 +268,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Dashboard stats
-  app.get("/api/dashboard/stats", isAuthenticated, async (req, res) => {
+  app.get("/api/dashboard/stats", isAuthenticated, async (req: any, res) => {
     try {
-      const stats = await storage.getEmployeeStats();
+      const stats = await storage.getEmployeeStats(req.user.id);
       const teamDistribution = await storage.getTeamDistribution();
       const recentChanges = await storage.getRecentChanges();
       
