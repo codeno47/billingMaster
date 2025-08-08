@@ -646,14 +646,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Password change endpoint (any authenticated user can change their own password)
   app.put("/api/users/change-password", isAuthenticated, async (req: any, res) => {
+    console.log("=== NEW PASSWORD CHANGE ENDPOINT ===");
+    console.log("User from middleware:", req.user);
+    console.log("Request body:", req.body);
+    
     try {
       const validatedData = changePasswordSchema.parse(req.body);
       
       // Get user ID from authenticated user
       const userId = req.user.id;
+      console.log("User ID:", userId, "Type:", typeof userId);
       
       // Verify current password
       const currentUser = await storage.getUser(userId);
+      console.log("Current user found:", currentUser ? currentUser.username : 'null');
+      
       if (!currentUser) {
         return res.status(400).json({ message: "User not found" });
       }
@@ -662,12 +669,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
       
+      console.log("Password verification successful, updating database...");
+      
       // Update password directly using database
       await db
         .update(users)
         .set({ password: validatedData.newPassword, updatedAt: new Date() })
         .where(eq(users.id, userId));
       
+      console.log("Password update completed successfully");
       res.json({ message: "Password changed successfully" });
     } catch (error: any) {
       console.error("Error changing password:", error);
