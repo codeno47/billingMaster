@@ -646,18 +646,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Password change endpoint (any authenticated user can change their own password)
   app.put("/api/users/change-password", isAuthenticated, async (req: any, res) => {
-    console.log("=== NEW PASSWORD CHANGE ENDPOINT ===");
-    console.log("User from middleware:", req.user);
-    console.log("Request body:", req.body);
+    console.log("=== PASSWORD CHANGE ENDPOINT ===");
+    console.log("User from middleware:", JSON.stringify(req.user, null, 2));
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
     
     try {
       const validatedData = changePasswordSchema.parse(req.body);
       
-      // Get user ID from authenticated user
-      const userId = req.user.id;
-      console.log("User ID:", userId, "Type:", typeof userId);
+      // Get user ID from authenticated user - ensure it's a number
+      const userId = parseInt(String(req.user.id));
+      console.log("Original user ID:", req.user.id, "Type:", typeof req.user.id);
+      console.log("Parsed user ID:", userId, "Type:", typeof userId, "Is valid:", !isNaN(userId));
+      
+      if (isNaN(userId)) {
+        console.error("CRITICAL: User ID is NaN!", req.user);
+        return res.status(400).json({ message: "Invalid user session" });
+      }
       
       // Verify current password
+      console.log("Calling storage.getUser with userId:", userId);
       const currentUser = await storage.getUser(userId);
       console.log("Current user found:", currentUser ? currentUser.username : 'null');
       
@@ -669,18 +676,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
       
-      console.log("Password verification successful, updating database...");
+      console.log("Password verification successful, updating database with userId:", userId);
       
       // Update password directly using database
-      await db
+      const result = await db
         .update(users)
         .set({ password: validatedData.newPassword, updatedAt: new Date() })
-        .where(eq(users.id, userId));
+        .where(eq(users.id, userId))
+        .returning({ id: users.id });
       
+      console.log("Database update result:", result);
       console.log("Password update completed successfully");
       res.json({ message: "Password changed successfully" });
     } catch (error: any) {
       console.error("Error changing password:", error);
+      console.error("Error stack:", error.stack);
       if (error.message === "Current password is incorrect") {
         res.status(400).json({ message: "Current password is incorrect" });
       } else {
