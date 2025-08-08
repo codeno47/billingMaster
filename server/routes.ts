@@ -34,6 +34,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post('/api/login', async (req, res) => {
+    console.log("=== LOGIN ENDPOINT HIT ===");
+    console.log("Request body:", req.body);
     try {
       const result = loginSchema.safeParse(req.body);
       if (!result.success) {
@@ -45,7 +47,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid username or password" });
       }
 
+      console.log("Login successful for user:", user.username, "ID:", user.id);
       req.session.userId = user.id;
+      console.log("Session after setting userId:", req.session);
       res.json({ user });
     } catch (error: any) {
       console.error("Login error:", error);
@@ -66,6 +70,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    console.log("AUTH USER endpoint - Session:", req.session);
+    console.log("AUTH USER endpoint - User:", req.user?.username);
     try {
       res.json(req.user);
     } catch (error: any) {
