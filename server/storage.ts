@@ -69,22 +69,23 @@ export interface IStorage {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'asc' | 'desc';
+    userId?: number; // For filtering based on user permissions
   }): Promise<{ employees: Employee[]; total: number }>;
   getEmployee(id: number): Promise<Employee | undefined>;
   createEmployee(employee: InsertEmployee): Promise<Employee>;
   updateEmployee(id: number, employee: UpdateEmployee): Promise<Employee>;
   deleteEmployee(id: number): Promise<void>;
-  getEmployeeStats(): Promise<{
+  getEmployeeStats(userId?: number): Promise<{
     total: number;
     active: number;
     inactive: number;
     monthlyBilling: number;
     averageRate: number;
   }>;
-  getTeamDistribution(): Promise<{ team: string; count: number }[]>;
-  getDistinctTeams(): Promise<string[]>;
-  getDistinctCostCentres(): Promise<string[]>;
-  getRecentChanges(): Promise<Employee[]>;
+  getTeamDistribution(userId?: number): Promise<{ team: string; count: number }[]>;
+  getDistinctTeams(userId?: number): Promise<string[]>;
+  getDistinctCostCentres(userId?: number): Promise<string[]>;
+  getRecentChanges(userId?: number): Promise<Employee[]>;
   getChangeReports(filters?: {
     period?: 'week' | 'month' | 'year';
     startDate?: string;
@@ -92,6 +93,7 @@ export interface IStorage {
     search?: string;
     team?: string;
     status?: string;
+    userId?: number; // For filtering based on user permissions
   }, pagination?: {
     page: number;
     limit: number;
@@ -115,6 +117,7 @@ export interface IStorage {
   // Reports
   getCostCentreBillingReport(filters?: {
     search?: string;
+    userId?: number; // For filtering based on user permissions
   }, pagination?: {
     page: number;
     limit: number;
@@ -129,7 +132,7 @@ export interface IStorage {
     totalBilling: number;
     totalEmployees: number;
   }>;
-  getCostCentrePerformanceData(): Promise<{ costCentre: string; monthlyData: { month: string; billing: number; employees: number; averageRate: number }[] }[]>;
+  getCostCentrePerformanceData(userId?: number): Promise<{ costCentre: string; monthlyData: { month: string; billing: number; employees: number; averageRate: number }[] }[]>;
 
   // Configuration operations
   getCostCentres(): Promise<CostCentre[]>;
@@ -454,41 +457,104 @@ export class DatabaseStorage implements IStorage {
     await db.delete(employees);
   }
 
-  async getDistinctTeams(): Promise<string[]> {
+  async getDistinctTeams(userId?: number): Promise<string[]> {
+    // Get user's accessible cost centres for filtering
+    let accessibleCostCentres: string[] = [];
+    if (userId) {
+      accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      // If user is not admin and has no cost centre access, return empty result
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return [];
+      }
+    }
+
+    const conditions = [
+      ne(employees.team, ""),
+      isNotNull(employees.team),
+      ne(employees.status, 'deleted')
+    ];
+
+    // Add cost centre filtering for non-admin users
+    if (userId && accessibleCostCentres.length > 0) {
+      const user = await this.getUser(userId);
+      if (user?.role !== 'admin') {
+        conditions.push(
+          or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc)))
+        );
+      }
+    }
+
     const result = await db
       .selectDistinct({ team: employees.team })
       .from(employees)
-      .where(and(
-        ne(employees.team, ""),
-        isNotNull(employees.team),
-        ne(employees.status, 'deleted')
-      ))
+      .where(and(...conditions))
       .orderBy(employees.team);
     
     return result.map(row => row.team).filter(Boolean) as string[];
   }
 
-  async getDistinctCostCentres(): Promise<string[]> {
+  async getDistinctCostCentres(userId?: number): Promise<string[]> {
+    // Get user's accessible cost centres
+    if (userId) {
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      
+      // If user is not admin, return only their accessible cost centres
+      if (user?.role !== 'admin') {
+        return accessibleCostCentres;
+      }
+    }
+
+    // For admin users or when no userId provided, return all cost centres
+    const conditions = [
+      ne(employees.costCentre, ""),
+      isNotNull(employees.costCentre),
+      ne(employees.status, 'deleted')
+    ];
+
     const result = await db
       .selectDistinct({ costCentre: employees.costCentre })
       .from(employees)
-      .where(and(
-        ne(employees.costCentre, ""),
-        isNotNull(employees.costCentre),
-        ne(employees.status, 'deleted')
-      ))
+      .where(and(...conditions))
       .orderBy(employees.costCentre);
     
     return result.map(row => row.costCentre).filter(Boolean) as string[];
   }
 
-  async getEmployeeStats(): Promise<{
+  async getEmployeeStats(userId?: number): Promise<{
     total: number;
     active: number;
     inactive: number;
     monthlyBilling: number;
     averageRate: number;
   }> {
+    // Get user's accessible cost centres for filtering
+    let whereConditions = [ne(employees.status, 'deleted')];
+    
+    if (userId) {
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      
+      // If user is not admin and has no cost centre access, return empty stats
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return {
+          total: 0,
+          active: 0,
+          inactive: 0,
+          monthlyBilling: 0,
+          averageRate: 0,
+        };
+      }
+      
+      // Add cost centre filtering for non-admin users
+      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
+        whereConditions.push(
+          or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc)))
+        );
+      }
+    }
+
     const stats = await db
       .select({
         total: sql<number>`count(*)`,
@@ -498,7 +564,7 @@ export class DatabaseStorage implements IStorage {
         averageRate: sql<number>`avg(case when status = 'active' and rate > 0 then rate else null end)`,
       })
       .from(employees)
-      .where(ne(employees.status, 'deleted'));
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined);
 
     return stats[0] || {
       total: 0,
@@ -509,14 +575,34 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getTeamDistribution(): Promise<{ team: string; count: number }[]> {
+  async getTeamDistribution(userId?: number): Promise<{ team: string; count: number }[]> {
+    // Get user's accessible cost centres for filtering
+    let whereConditions = [eq(employees.status, 'active'), ne(employees.team, 'NA')];
+    
+    if (userId) {
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      
+      // If user is not admin and has no cost centre access, return empty result
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return [];
+      }
+      
+      // Add cost centre filtering for non-admin users
+      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
+        whereConditions.push(
+          or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc)))
+        );
+      }
+    }
+
     const teams = await db
       .select({
         team: employees.team,
         count: sql<number>`count(*)`,
       })
       .from(employees)
-      .where(and(eq(employees.status, 'active'), ne(employees.team, 'NA')))
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .groupBy(employees.team)
       .orderBy(desc(sql`count(*)`));
 
@@ -526,14 +612,33 @@ export class DatabaseStorage implements IStorage {
     }));
   }
 
-  async getRecentChanges(): Promise<Employee[]> {
+  async getRecentChanges(userId?: number): Promise<Employee[]> {
+    // Get user's accessible cost centres for filtering
+    let whereConditions: any[] = [];
+    
+    if (userId) {
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      
+      // If user is not admin and has no cost centre access, return empty result
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return [];
+      }
+      
+      // Add cost centre filtering for non-admin users
+      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
+        whereConditions.push(
+          or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc)))
+        );
+      }
+    }
+
     const result = await db
       .select()
       .from(employees)
+      .where(whereConditions.length > 0 ? and(...whereConditions) : undefined)
       .orderBy(desc(employees.updatedAt))
       .limit(10);
-    
-    // Debug logging removed for cleaner production logs
     
     return result;
   }
@@ -545,6 +650,7 @@ export class DatabaseStorage implements IStorage {
     search?: string;
     team?: string;
     status?: string;
+    userId?: number; // For filtering based on user permissions
   } = {}, pagination?: {
     page: number;
     limit: number;
@@ -552,7 +658,7 @@ export class DatabaseStorage implements IStorage {
     sortBy: string;
     sortOrder: 'asc' | 'desc';
   }): Promise<{ reports: Employee[]; total: number; page: number; totalPages: number; }> {
-    const { period, startDate, endDate, search, team, status } = filters;
+    const { period, startDate, endDate, search, team, status, userId } = filters;
     const paginationConfig = pagination || { page: 1, limit: 25 };
     const sortConfig = sorting || { sortBy: 'updatedAt', sortOrder: 'desc' };
     
@@ -587,6 +693,24 @@ export class DatabaseStorage implements IStorage {
       ne(employees.changesSummary, ''),
       dateCondition
     ].filter(Boolean);
+
+    // Add cost centre filtering for non-admin users
+    if (userId) {
+      const accessibleCostCentres = await this.getUserAccessibleCostCentres(userId);
+      const user = await this.getUser(userId);
+      
+      // If user is not admin and has no cost centre access, return empty result
+      if (user?.role !== 'admin' && accessibleCostCentres.length === 0) {
+        return { reports: [], total: 0, page: paginationConfig.page, totalPages: 0 };
+      }
+      
+      // Add cost centre filtering for non-admin users
+      if (user?.role !== 'admin' && accessibleCostCentres.length > 0) {
+        conditions.push(
+          or(...accessibleCostCentres.map(cc => eq(employees.costCentre, cc)))
+        );
+      }
+    }
 
     // Add search filter
     if (search) {

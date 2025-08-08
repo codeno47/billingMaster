@@ -100,9 +100,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get distinct teams (must come before /:id route)
-  app.get("/api/employees/teams", isAuthenticated, async (req, res) => {
+  app.get("/api/employees/teams", isAuthenticated, async (req: any, res) => {
     try {
-      const teams = await storage.getDistinctTeams();
+      const teams = await storage.getDistinctTeams(req.user.id);
       res.json(teams);
     } catch (error) {
       console.error("Error fetching teams:", error);
@@ -111,9 +111,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get distinct cost centres (must come before /:id route)
-  app.get("/api/employees/cost-centres", isAuthenticated, async (req, res) => {
+  app.get("/api/employees/cost-centres", isAuthenticated, async (req: any, res) => {
     try {
-      const costCentres = await storage.getDistinctCostCentres();
+      const costCentres = await storage.getDistinctCostCentres(req.user.id);
       res.json(costCentres);
     } catch (error) {
       console.error("Error fetching cost centres:", error);
@@ -122,7 +122,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Export employees (must come before /:id route)
-  app.get("/api/employees/export", isAuthenticated, async (req, res) => {
+  app.get("/api/employees/export", isAuthenticated, async (req: any, res) => {
     try {
       // Use the same filtering logic as the main employee list
       const {
@@ -153,7 +153,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         offset: 0,
         limit: 10000, // Export all matching records
         sortBy,
-        sortOrder
+        sortOrder,
+        userId: (req.user as any)?.id // Apply user-based filtering for export
       });
       
       // Convert to CSV format matching the provided template
@@ -271,8 +272,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/dashboard/stats", isAuthenticated, async (req: any, res) => {
     try {
       const stats = await storage.getEmployeeStats(req.user.id);
-      const teamDistribution = await storage.getTeamDistribution();
-      const recentChanges = await storage.getRecentChanges();
+      const teamDistribution = await storage.getTeamDistribution(req.user.id);
+      const recentChanges = await storage.getRecentChanges(req.user.id);
       
       res.json({
         ...stats,
@@ -286,7 +287,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Change reports
-  app.get("/api/reports/changes", isAuthenticated, async (req, res) => {
+  app.get("/api/reports/changes", isAuthenticated, async (req: any, res) => {
     try {
       const { period, startDate, endDate, search, team, status, page, limit, sortBy, sortOrder } = req.query;
       const filters = {
@@ -296,6 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         search: search as string,
         team: team === 'all' ? undefined : team as string,
         status: status === 'all' ? undefined : status as string,
+        userId: req.user.id, // Add user filtering for change reports
       };
       
       const pagination = {
@@ -316,11 +318,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/reports/cost-centre-billing", isAuthenticated, async (req, res) => {
+  app.get("/api/reports/cost-centre-billing", isAuthenticated, async (req: any, res) => {
     try {
       const { search, page, limit, sortBy, sortOrder } = req.query;
       const filters = {
         search: search as string,
+        userId: req.user.id, // Add user filtering for cost centre billing
       };
       
       const pagination = {
@@ -341,9 +344,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/reports/cost-centre-performance", isAuthenticated, async (req, res) => {
+  app.get("/api/reports/cost-centre-performance", isAuthenticated, async (req: any, res) => {
     try {
-      const performanceData = await storage.getCostCentrePerformanceData();
+      const performanceData = await storage.getCostCentrePerformanceData(req.user.id);
       res.json(performanceData);
     } catch (error) {
       console.error("Error fetching cost centre performance data:", error);
