@@ -33,7 +33,6 @@ import {
   type Team,
   type InsertTeam,
   type UpdateTeam,
-  type ChangePassword,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, like, ilike, and, or, desc, asc, sql, ne, isNotNull, isNull, count, sum } from "drizzle-orm";
@@ -48,7 +47,6 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   deleteUser(id: number): Promise<void>;
-  changeUserPassword(userId: number, passwordData: ChangePassword): Promise<void>;
   initializeUsers(): Promise<void>;
 
   // Employee operations
@@ -226,38 +224,7 @@ export class DatabaseStorage implements IStorage {
     await db.delete(users).where(eq(users.id, id));
   }
 
-  async changeUserPassword(userId: number, passwordData: ChangePassword): Promise<void> {
-    console.log("=== CHANGE PASSWORD STORAGE METHOD ===");
-    console.log("Received userId:", userId, "Type:", typeof userId);
-    console.log("Password data:", { 
-      currentPassword: passwordData.currentPassword, 
-      newPassword: passwordData.newPassword,
-      confirmPassword: passwordData.confirmPassword 
-    });
-    
-    // First verify the current password
-    const user = await this.getUser(userId);
-    console.log("Found user:", user ? `${user.username} (ID: ${user.id})` : 'null');
-    
-    if (!user) {
-      throw new Error("User not found");
-    }
-    
-    // Simple password comparison (in production, this should use proper hashing)
-    if (user.password !== passwordData.currentPassword) {
-      throw new Error("Current password is incorrect");
-    }
-    
-    console.log("Password verification successful, updating...");
-    
-    // Update with new password
-    await db
-      .update(users)
-      .set({ password: passwordData.newPassword, updatedAt: new Date() })
-      .where(eq(users.id, userId));
-      
-    console.log("Password update completed successfully");
-  }
+  // REMOVED: changeUserPassword method - now handled directly in routes
 
   // Employee operations
   async getEmployees(filters: {
