@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated, requireRole } from "./auth";
-import { insertEmployeeSchema, updateEmployeeSchema, insertBillingRateSchema, insertProjectSchema, loginSchema } from "@shared/schema";
+import { insertEmployeeSchema, updateEmployeeSchema, insertBillingRateSchema, insertProjectSchema, loginSchema, insertUserSchema, updateUserSchema } from "@shared/schema";
 import { parseCSV } from "./services/csv-parser";
 import multer from "multer";
 
@@ -581,6 +581,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deleting team:", error);
       res.status(500).json({ message: "Failed to delete team" });
+    }
+  });
+
+  // User Management routes (admin only)
+  app.get("/api/users", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Remove passwords from response for security
+      const safeUsers = users.map(user => {
+        const { password, ...safeUser } = user;
+        return safeUser;
+      });
+      res.json(safeUsers);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/users", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      const user = await storage.createUser(validatedData);
+      // Remove password from response
+      const { password, ...safeUser } = user;
+      res.status(201).json(safeUser);
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      res.status(400).json({ message: "Failed to create user", error: error.message });
+    }
+  });
+
+  app.put("/api/users/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const validatedData = updateUserSchema.parse(req.body);
+      const user = await storage.updateUser(parseInt(req.params.id), validatedData);
+      // Remove password from response
+      const { password, ...safeUser } = user;
+      res.json(safeUser);
+    } catch (error: any) {
+      console.error("Error updating user:", error);
+      res.status(400).json({ message: "Failed to update user", error: error.message });
+    }
+  });
+
+  app.delete("/api/users/:id", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      await storage.deleteUser(parseInt(req.params.id));
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error deleting user:", error);
+      res.status(500).json({ message: "Failed to delete user" });
     }
   });
 

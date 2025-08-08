@@ -55,9 +55,13 @@ export default function EmployeeTable({
       // Invalidate all employee-related queries
       queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
       queryClient.invalidateQueries({ queryKey: ["/api/dashboard/stats"] });
-      // Invalidate reports cache to ensure real-time updates
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/changes"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/reports/cost-centre-billing"] });
+      // Invalidate ALL report queries regardless of parameters to ensure real-time updates
+      queryClient.invalidateQueries({ 
+        predicate: (query) => 
+          query.queryKey[0] === "/api/reports/changes" || 
+          query.queryKey[0] === "/api/reports/cost-centre-billing" ||
+          query.queryKey[0] === "/api/reports/cost-centre-performance"
+      });
       
       toast({
         title: "Employee deleted",

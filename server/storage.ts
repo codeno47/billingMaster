@@ -43,6 +43,11 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   loginUser(credentials: LoginRequest): Promise<User | null>;
+  // User management operations
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
+  deleteUser(id: number): Promise<void>;
+  initializeUsers(): Promise<void>;
 
   // Employee operations
   getEmployees(filters?: {
@@ -199,6 +204,24 @@ export class DatabaseStorage implements IStorage {
         role: "finance"
       });
     }
+  }
+
+  // User management operations
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.username);
+  }
+
+  async updateUser(id: number, userData: Partial<InsertUser>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ ...userData, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async deleteUser(id: number): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
   }
 
   // Employee operations

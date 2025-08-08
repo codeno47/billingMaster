@@ -142,12 +142,15 @@ export default function Reports() {
   const handleDownloadBillingReport = () => {
     if (!costCentreBilling.length) return;
     
+    // Calculate total billing for percentage calculations
+    const totalBilling = costCentreBillingData?.totalBilling || 0;
+    
     // Create CSV content with billing percentage
     const headers = ['Cost Centre', 'Total Monthly Billing ($)', 'Active Employees', 'Average Rate ($)', 'Billing Percentage (%)'];
     const csvData = costCentreBilling.map(cc => {
       // Calculate billing percentage for each cost centre
-      const billingPercentage = billingStats.totalBilling > 0 
-        ? (cc.totalBilling / billingStats.totalBilling * 100) 
+      const billingPercentage = totalBilling > 0 
+        ? (cc.totalBilling / totalBilling * 100) 
         : 0;
       
       return [

@@ -138,6 +138,12 @@ export const insertUserSchema = createInsertSchema(users).omit({
   updatedAt: true,
 });
 
+export const updateUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+}).partial();
+
 export const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
