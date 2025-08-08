@@ -227,8 +227,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async changeUserPassword(userId: number, passwordData: ChangePassword): Promise<void> {
+    console.log("=== CHANGE PASSWORD STORAGE METHOD ===");
+    console.log("Received userId:", userId, "Type:", typeof userId);
+    console.log("Password data:", { 
+      currentPassword: passwordData.currentPassword, 
+      newPassword: passwordData.newPassword,
+      confirmPassword: passwordData.confirmPassword 
+    });
+    
     // First verify the current password
     const user = await this.getUser(userId);
+    console.log("Found user:", user ? `${user.username} (ID: ${user.id})` : 'null');
+    
     if (!user) {
       throw new Error("User not found");
     }
@@ -238,11 +248,15 @@ export class DatabaseStorage implements IStorage {
       throw new Error("Current password is incorrect");
     }
     
+    console.log("Password verification successful, updating...");
+    
     // Update with new password
     await db
       .update(users)
       .set({ password: passwordData.newPassword, updatedAt: new Date() })
       .where(eq(users.id, userId));
+      
+    console.log("Password update completed successfully");
   }
 
   // Employee operations
