@@ -640,7 +640,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/change-password", isAuthenticated, async (req: any, res) => {
     try {
       const validatedData = changePasswordSchema.parse(req.body);
-      const userId = req.session.userId;
+      const userId = req.user.id; // Get user ID from authenticated user object
       
       await storage.changeUserPassword(userId, validatedData);
       res.json({ message: "Password changed successfully" });
