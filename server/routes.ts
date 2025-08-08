@@ -662,6 +662,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User cost centre management routes
+  app.get("/api/users/:id/cost-centres", isAuthenticated, requireRole('admin'), async (req, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const costCentres = await storage.getUserCostCentres(userId);
+      res.json(costCentres);
+    } catch (error: any) {
+      console.error("Error fetching user cost centres:", error);
+      res.status(500).json({ message: "Failed to fetch user cost centres" });
+    }
+  });
+
   // CSV import (admin only)
   app.post("/api/employees/import", isAuthenticated, requireRole('admin'), upload.single('file'), async (req: any, res) => {
     try {

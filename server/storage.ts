@@ -4,6 +4,7 @@ import {
   billingRates,
   projects,
   costCentres,
+  userCostCentres,
   bands,
   shifts,
   roles,
@@ -21,6 +22,8 @@ import {
   type CostCentre,
   type InsertCostCentre,
   type UpdateCostCentre,
+  type UserCostCentre,
+  type InsertUserCostCentre,
   type Band,
   type InsertBand,
   type UpdateBand,
@@ -48,6 +51,12 @@ export interface IStorage {
   updateUser(id: number, user: Partial<InsertUser>): Promise<User>;
   deleteUser(id: number): Promise<void>;
   initializeUsers(): Promise<void>;
+  
+  // User cost centre operations
+  getUserCostCentres(userId: number): Promise<CostCentre[]>;
+  updateUserCostCentres(userId: number, costCentreIds: number[]): Promise<void>;
+  canUserAccessCostCentre(userId: number, costCentre: string): Promise<boolean>;
+  getUserAccessibleCostCentres(userId: number): Promise<string[]>;
 
   // Employee operations
   getEmployees(filters?: {
@@ -165,10 +174,18 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(userData: InsertUser): Promise<User> {
+    const { costCentreIds = [], ...userInsertData } = userData;
+    
     const [user] = await db
       .insert(users)
-      .values(userData)
+      .values(userInsertData)
       .returning();
+    
+    // Handle cost centre assignments
+    if (costCentreIds.length > 0) {
+      await this.updateUserCostCentres(user.id, costCentreIds);
+    }
+    
     return user;
   }
 
@@ -193,7 +210,8 @@ export class DatabaseStorage implements IStorage {
         email: "admin@company.com",
         firstName: "Admin",
         lastName: "User",
-        role: "admin"
+        role: "admin",
+        costCentreIds: [] // Admin has access to all by default
       });
       await this.createUser({
         username: "finance",
@@ -201,7 +219,8 @@ export class DatabaseStorage implements IStorage {
         email: "finance@company.com",
         firstName: "Finance",
         lastName: "Manager",
-        role: "finance"
+        role: "finance",
+        costCentreIds: [] // Finance starts with no access
       });
     }
   }
@@ -212,15 +231,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async updateUser(id: number, userData: Partial<InsertUser>): Promise<User> {
+    const { costCentreIds, ...userUpdateData } = userData;
+    
     const [user] = await db
       .update(users)
-      .set({ ...userData, updatedAt: new Date() })
+      .set({ ...userUpdateData, updatedAt: new Date() })
       .where(eq(users.id, id))
       .returning();
+    
+    // Handle cost centre assignments if provided
+    if (costCentreIds !== undefined) {
+      await this.updateUserCostCentres(id, costCentreIds);
+    }
+    
     return user;
   }
 
   async deleteUser(id: number): Promise<void> {
+    // Delete user cost centre relationships first
+    await db.delete(userCostCentres).where(eq(userCostCentres.userId, id));
+    // Delete the user
     await db.delete(users).where(eq(users.id, id));
   }
 
@@ -1049,6 +1079,75 @@ export class DatabaseStorage implements IStorage {
         { name: "Project Management", department: "Operations", manager: "PM Lead" },
       ]);
     }
+  }
+
+  // User cost centre operations
+  async getUserCostCentres(userId: number): Promise<CostCentre[]> {
+    const result = await db
+      .select({
+        id: costCentres.id,
+        code: costCentres.code,
+        description: costCentres.description,
+        createdAt: costCentres.createdAt,
+        updatedAt: costCentres.updatedAt,
+      })
+      .from(userCostCentres)
+      .innerJoin(costCentres, eq(userCostCentres.costCentreId, costCentres.id))
+      .where(eq(userCostCentres.userId, userId));
+    
+    return result;
+  }
+
+  async updateUserCostCentres(userId: number, costCentreIds: number[]): Promise<void> {
+    // Remove existing relationships
+    await db.delete(userCostCentres).where(eq(userCostCentres.userId, userId));
+    
+    // Add new relationships
+    if (costCentreIds.length > 0) {
+      const insertData = costCentreIds.map(costCentreId => ({
+        userId,
+        costCentreId,
+      }));
+      await db.insert(userCostCentres).values(insertData);
+    }
+  }
+
+  async canUserAccessCostCentre(userId: number, costCentre: string): Promise<boolean> {
+    // Admin users have access to all cost centres
+    const user = await this.getUser(userId);
+    if (user?.role === 'admin') {
+      return true;
+    }
+
+    // Check if user has access to this specific cost centre
+    const result = await db
+      .select({ count: count() })
+      .from(userCostCentres)
+      .innerJoin(costCentres, eq(userCostCentres.costCentreId, costCentres.id))
+      .where(and(
+        eq(userCostCentres.userId, userId),
+        eq(costCentres.code, costCentre)
+      ));
+    
+    return result[0]?.count > 0;
+  }
+
+  async getUserAccessibleCostCentres(userId: number): Promise<string[]> {
+    // Admin users have access to all cost centres
+    const user = await this.getUser(userId);
+    if (user?.role === 'admin') {
+      const allCostCentres = await db.select({ code: costCentres.code }).from(costCentres);
+      return allCostCentres.map(cc => cc.code);
+    }
+
+    // Get user's assigned cost centres
+    const result = await db
+      .select({ code: costCentres.code })
+      .from(userCostCentres)
+      .innerJoin(costCentres, eq(userCostCentres.costCentreId, costCentres.id))
+      .where(eq(userCostCentres.userId, userId));
+    
+    return result.map(cc => cc.code);
   }
 }
 

@@ -89,6 +89,17 @@ export const costCentres = pgTable("cost_centres", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// User-Cost Centre relationship table (many-to-many)
+export const userCostCentres = pgTable("user_cost_centres", {
+  id: serial("id").primaryKey(),
+  userId: serial("user_id").references(() => users.id).notNull(),
+  costCentreId: serial("cost_centre_id").references(() => costCentres.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => [
+  index("idx_user_cost_centres_user_id").on(table.userId),
+  index("idx_user_cost_centres_cost_centre_id").on(table.costCentreId),
+]);
+
 export const bands = pgTable("bands", {
   id: serial("id").primaryKey(),
   level: varchar("level").notNull().unique(),
@@ -136,12 +147,16 @@ export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  costCentreIds: z.array(z.number()).optional().default([]),
 });
 
 export const updateUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
+}).extend({
+  costCentreIds: z.array(z.number()).optional(),
 }).partial();
 
 export const loginSchema = z.object({
@@ -233,6 +248,16 @@ export type InsertBillingRate = z.infer<typeof insertBillingRateSchema>;
 export type CostCentre = typeof costCentres.$inferSelect;
 export type InsertCostCentre = z.infer<typeof insertCostCentreSchema>;
 export type UpdateCostCentre = z.infer<typeof updateCostCentreSchema>;
+
+export type UserCostCentre = typeof userCostCentres.$inferSelect;
+export type InsertUserCostCentre = typeof userCostCentres.$inferInsert;
+
+// Schema for updating user cost centre assignments
+export const updateUserCostCentresSchema = z.object({
+  costCentreIds: z.array(z.number()).default([]),
+});
+
+export type UpdateUserCostCentres = z.infer<typeof updateUserCostCentresSchema>;
 
 export type Band = typeof bands.$inferSelect;
 export type InsertBand = z.infer<typeof insertBandSchema>;

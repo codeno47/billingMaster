@@ -28,6 +28,7 @@ const userFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   role: z.enum(["admin", "finance"], { required_error: "Please select a role" }),
+  costCentreIds: z.array(z.number()).optional().default([]),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
@@ -41,6 +42,7 @@ const updateUserFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   role: z.enum(["admin", "finance"], { required_error: "Please select a role" }),
+  costCentreIds: z.array(z.number()).optional(),
 }).refine((data) => {
   if (data.password && data.password.length > 0) {
     return data.password === data.confirmPassword;
@@ -61,6 +63,15 @@ interface User {
   firstName?: string;
   lastName?: string;
   role: "admin" | "finance";
+  createdAt: string;
+  updatedAt: string;
+  costCentres?: CostCentre[];
+}
+
+interface CostCentre {
+  id: number;
+  code: string;
+  description: string;
   createdAt: string;
   updatedAt: string;
 }
