@@ -37,6 +37,9 @@ This is the Elixr Labs Billing System built as a full-stack web application. The
 - Fixed synchronization issue between Employee and Reports modules - status changes now reflect immediately without manual refresh
 - Enhanced all employee mutations (create, update, delete, import, clear) to invalidate reports cache for seamless data consistency
 - Fixed Cost Centre Billing report CSV export to include billing percentage values matching the on-screen report data
+- Added profile dropdown menu in navbar with password change functionality for all authenticated users
+- Implemented secure password change system with validation and proper authentication checks
+- Enhanced navbar design from simple logout button to comprehensive user profile dropdown with avatar display
 
 # User Preferences
 
