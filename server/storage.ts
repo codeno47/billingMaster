@@ -716,7 +716,14 @@ export class DatabaseStorage implements IStorage {
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
-      return sortConfig.sortOrder === 'asc' ? aValue - bValue : bValue - aValue;
+      // Handle numeric comparison
+      const numA = Number(aValue);
+      const numB = Number(bValue);
+      if (!isNaN(numA) && !isNaN(numB)) {
+        return sortConfig.sortOrder === 'asc' ? numA - numB : numB - numA;
+      }
+      // Fallback to string comparison
+      return sortConfig.sortOrder === 'asc' ? String(aValue).localeCompare(String(bValue)) : String(bValue).localeCompare(String(aValue));
     });
 
     // Apply pagination
