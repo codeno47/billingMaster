@@ -638,25 +638,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Password change endpoint (any authenticated user can change their own password)
   app.put("/api/users/change-password", isAuthenticated, async (req: any, res) => {
+    console.log("=== PASSWORD CHANGE ENDPOINT HIT ===");
+    console.log("Request body:", req.body);
+    console.log("User from middleware:", req.user);
+    console.log("Session:", req.session);
+    
     try {
       const validatedData = changePasswordSchema.parse(req.body);
-      const userId = req.user.id;
+      const userId = req.user?.id;
       
-      console.log("Password change debug:", {
-        userId,
-        userIdType: typeof userId,
-        userObject: req.user,
-        sessionUserId: req.session.userId
-      });
+      console.log("Extracted userId:", userId, "Type:", typeof userId);
+      
+      if (!userId) {
+        console.error("No user ID found in request");
+        return res.status(400).json({ message: "User not found in session" });
+      }
       
       // Ensure userId is a valid number
-      const parsedUserId = parseInt(userId);
+      const parsedUserId = Number(userId);
       if (isNaN(parsedUserId)) {
         console.error("Invalid user ID:", userId);
         return res.status(400).json({ message: "Invalid user session" });
       }
       
+      console.log("About to call changeUserPassword with userId:", parsedUserId);
       await storage.changeUserPassword(parsedUserId, validatedData);
+      console.log("Password change successful");
       res.json({ message: "Password changed successfully" });
     } catch (error: any) {
       console.error("Error changing password:", error);
