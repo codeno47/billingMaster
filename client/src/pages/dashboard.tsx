@@ -48,7 +48,7 @@ export default function Dashboard() {
         <h1 className="text-2xl font-bold text-gray-900">
           {user?.role === 'admin' ? 'Administrator Dashboard' : 'Finance Manager Dashboard'}
         </h1>
-        <p className="text-gray-600">Overview of employee billing and statistics</p>
+        <p className="text-gray-600">Overview of Elixr Labs employee billing and statistics</p>
       </div>
 
       {/* Stats Cards */}

@@ -137,7 +137,7 @@ export default function Billing() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Billing Management</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Elixr Labs Billing Management</h1>
         <p className="text-gray-600">Monitor billing information and financial analytics</p>
       </div>
 

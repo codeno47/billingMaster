@@ -1,6 +1,6 @@
 # Overview
 
-This is an Employee Billing Management System built as a full-stack web application. The system allows administrators and finance managers to manage employee records, track billing information, and generate reports. It features role-based access control with two user types: administrators (full access) and finance managers (read-only access to most features). The application provides CRUD operations for employee data, CSV import/export functionality, and comprehensive billing analytics.
+This is the Elixr Labs Billing System built as a full-stack web application. The system allows administrators and finance managers to manage employee records, track billing information, and generate reports. It features role-based access control with two user types: administrators (full access) and finance managers (read-only access to most features). The application provides CRUD operations for employee data, CSV import/export functionality, and comprehensive billing analytics.
 
 ## Recent Changes (August 2025)
 - Fixed database connection issues with Neon PostgreSQL by optimizing websocket configuration

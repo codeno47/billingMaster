@@ -71,7 +71,7 @@ export default function Navbar() {
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-800">Billing Management</h1>
+            <h1 className="text-xl font-bold text-gray-800">Elixr Labs Billing System</h1>
             <p className="text-sm text-gray-600">{getRoleDisplay()} Dashboard</p>
           </div>
           

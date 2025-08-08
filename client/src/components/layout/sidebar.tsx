@@ -36,7 +36,7 @@ export default function Sidebar() {
             <ChartLine className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-gray-800">Billing System</h1>
+            <h1 className="text-lg font-bold text-gray-800">Elixr Labs Billing System</h1>
           </div>
         </div>
 

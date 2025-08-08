@@ -31,7 +31,7 @@ export default function Login() {
     onSuccess: () => {
       toast({
         title: "Login successful",
-        description: "Welcome to the Employee Billing Management System",
+        description: "Welcome to the Elixr Labs Billing System",
       });
       // Invalidate auth query to trigger re-fetch
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
@@ -66,7 +66,7 @@ export default function Login() {
           <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
             <DollarSign className="h-6 w-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Employee Billing</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Elixr Labs Billing System</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">Management System</p>
         </div>
 

@@ -325,7 +325,7 @@ function SettingsContent() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">System Settings</h1>
-        <p className="text-gray-600">Configure billing settings and master data for the employee management system</p>
+        <p className="text-gray-600">Configure billing settings and master data for the Elixr Labs billing management system</p>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

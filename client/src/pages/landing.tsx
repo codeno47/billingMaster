@@ -15,14 +15,14 @@ export default function Landing() {
             <div className="bg-primary text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
               <ChartLine className="text-2xl" />
             </div>
-            <h1 className="text-2xl font-bold text-gray-800">Employee Billing System</h1>
-            <p className="text-gray-600">Secure access to billing management</p>
+            <h1 className="text-2xl font-bold text-gray-800">Elixr Labs Billing System</h1>
+            <p className="text-gray-600">Secure access to Elixr Labs billing management</p>
           </div>
           
           <div className="space-y-6">
             <div className="text-center">
               <p className="text-sm text-gray-600 mb-4">
-                Sign in with your authorized account to access the billing management system.
+                Sign in with your authorized account to access the Elixr Labs billing management system.
               </p>
               
               <Button 
