@@ -72,8 +72,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-    console.log("AUTH USER endpoint - Session:", req.session);
-    console.log("AUTH USER endpoint - User:", req.user?.username);
     try {
       res.json(req.user);
     } catch (error: any) {
@@ -592,58 +590,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Password change endpoint (any authenticated user can change their own password) - MUST BE BEFORE /api/users/:id
-  app.put("/api/users/change-password", isAuthenticated, async (req: any, res) => {
-    console.log("=== PASSWORD CHANGE ENDPOINT ===");
-    console.log("User from middleware:", JSON.stringify(req.user, null, 2));
-    console.log("Request body:", JSON.stringify(req.body, null, 2));
-    
+  // New password change endpoint with cleaner implementation
+  app.put("/api/auth/change-password", isAuthenticated, async (req: any, res) => {
     try {
-      const validatedData = changePasswordSchema.parse(req.body);
+      const { currentPassword, newPassword, confirmPassword } = req.body;
       
-      // Get user ID from authenticated user - ensure it's a number
-      const userId = parseInt(String(req.user.id));
-      console.log("Original user ID:", req.user.id, "Type:", typeof req.user.id);
-      console.log("Parsed user ID:", userId, "Type:", typeof userId, "Is valid:", !isNaN(userId));
-      
-      if (isNaN(userId)) {
-        console.error("CRITICAL: User ID is NaN!", req.user);
-        return res.status(400).json({ message: "Invalid user session" });
+      // Basic validation
+      if (!currentPassword || !newPassword || !confirmPassword) {
+        return res.status(400).json({ message: "All password fields are required" });
       }
+      
+      if (newPassword !== confirmPassword) {
+        return res.status(400).json({ message: "New passwords do not match" });
+      }
+      
+      if (newPassword.length < 5 || newPassword.length > 12) {
+        return res.status(400).json({ message: "New password must be between 5 and 12 characters" });
+      }
+      
+      // Get current user from session
+      const userId = req.user.id;
+      const currentUser = req.user;
       
       // Verify current password
-      console.log("Calling storage.getUser with userId:", userId);
-      const currentUser = await storage.getUser(userId);
-      console.log("Current user found:", currentUser ? currentUser.username : 'null');
-      
-      if (!currentUser) {
-        return res.status(400).json({ message: "User not found" });
-      }
-      
-      if (currentUser.password !== validatedData.currentPassword) {
+      if (currentUser.password !== currentPassword) {
         return res.status(400).json({ message: "Current password is incorrect" });
       }
       
-      console.log("Password verification successful, updating database with userId:", userId);
-      
-      // Update password directly using database
-      const result = await db
+      // Update password in database
+      await db
         .update(users)
-        .set({ password: validatedData.newPassword, updatedAt: new Date() })
-        .where(eq(users.id, userId))
-        .returning({ id: users.id });
+        .set({ 
+          password: newPassword, 
+          updatedAt: new Date() 
+        })
+        .where(eq(users.id, userId));
       
-      console.log("Database update result:", result);
-      console.log("Password update completed successfully");
       res.json({ message: "Password changed successfully" });
     } catch (error: any) {
-      console.error("Error changing password:", error);
-      console.error("Error stack:", error.stack);
-      if (error.message === "Current password is incorrect") {
-        res.status(400).json({ message: "Current password is incorrect" });
-      } else {
-        res.status(400).json({ message: "Failed to change password", error: error.message });
-      }
+      console.error("Password change error:", error);
+      res.status(500).json({ message: "Failed to change password" });
     }
   });
 

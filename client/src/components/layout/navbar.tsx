@@ -41,7 +41,7 @@ function PasswordChangeDialog({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   const passwordChangeMutation = useMutation({
     mutationFn: async (data: PasswordChangeData) => {
-      const response = await apiRequest("PUT", "/api/users/change-password", data);
+      const response = await apiRequest("PUT", "/api/auth/change-password", data);
       return response.json();
     },
     onSuccess: () => {

@@ -39,19 +39,12 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  console.log("=== AUTH MIDDLEWARE ===");
-  console.log("Session:", req.session);
-  console.log("Session userId:", req.session?.userId);
-  console.log("Cookie header:", req.headers.cookie);
-  
   if (!req.session?.userId) {
-    console.log("No session userId found, returning 401");
     return res.status(401).json({ message: "Unauthorized" });
   }
 
   try {
     const user = await storage.getUser(req.session.userId);
-    console.log("Found user from session:", user ? user.username : 'null');
     
     if (!user) {
       req.session.destroy(() => {});
