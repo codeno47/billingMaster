@@ -14,6 +14,7 @@ import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import NavbarLogo from "@/assets/navbar-logo.svg";
 
 // Password change schema
 const passwordChangeSchema = z.object({
@@ -213,9 +214,12 @@ export default function Navbar() {
     <nav className="bg-white shadow-sm border-b border-gray-200">
       <div className="px-6 py-4">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-gray-800">Elixr Labs Billing System</h1>
-            <p className="text-sm text-gray-600">{getRoleDisplay()} Dashboard</p>
+          <div className="flex items-center space-x-3">
+            <img src={NavbarLogo} alt="Elixr Labs" className="h-10 w-auto" />
+            <div>
+              <h1 className="text-xl font-bold text-gray-800">Elixr Labs Billing System</h1>
+              <p className="text-sm text-gray-600">{getRoleDisplay()} Dashboard</p>
+            </div>
           </div>
           
           <div className="flex items-center space-x-4">

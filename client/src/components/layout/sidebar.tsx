@@ -7,9 +7,9 @@ import {
   DollarSign, 
   BarChart3, 
   Settings, 
-  UserCog,
-  Building2
+  UserCog
 } from "lucide-react";
+import SidebarLogo from "@/assets/Sidebar_Logo_light_bg.svg";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: Home, roles: ["admin", "finance"] },
@@ -32,8 +32,8 @@ export default function Sidebar() {
     <div className="w-64 bg-white shadow-sm min-h-screen border-r border-gray-200">
       <div className="p-6">
         <div className="flex items-center space-x-3 mb-8">
-          <div className="bg-primary text-white rounded-lg w-10 h-10 flex items-center justify-center">
-            <Building2 className="w-5 h-5" />
+          <div className="w-10 h-10 flex items-center justify-center">
+            <img src={SidebarLogo} alt="Elixr Labs" className="w-10 h-10" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-800">Elixr Labs Billing System</h1>

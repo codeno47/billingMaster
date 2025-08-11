@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { loginSchema, type LoginRequest } from "@shared/schema";
 import { LogIn, Users, DollarSign } from "lucide-react";
+import LoginLogo from "@/assets/Login_Page_Logo_light_bg.svg";
 
 export default function Login() {
   const { toast } = useToast();
@@ -63,8 +64,8 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-lg flex items-center justify-center mb-4">
-            <DollarSign className="h-6 w-6 text-white" />
+          <div className="mx-auto mb-4 flex justify-center">
+            <img src={LoginLogo} alt="Elixr Labs" className="h-24 w-24" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Elixr Labs Billing System</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-2">Management System</p>
