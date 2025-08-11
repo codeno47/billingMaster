@@ -2,17 +2,17 @@ import { Link, useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { 
-  LayoutDashboard, 
+  Home, 
   Users, 
   DollarSign, 
   BarChart3, 
   Settings, 
   UserCog,
-  ChartLine
+  Building2
 } from "lucide-react";
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard, roles: ["admin", "finance"] },
+  { name: "Dashboard", href: "/", icon: Home, roles: ["admin", "finance"] },
   { name: "Employees", href: "/employees", icon: Users, roles: ["admin", "finance"] },
   { name: "Billing", href: "/billing", icon: DollarSign, roles: ["admin", "finance"] },
   { name: "Reports", href: "/reports", icon: BarChart3, roles: ["admin", "finance"] },
@@ -33,7 +33,7 @@ export default function Sidebar() {
       <div className="p-6">
         <div className="flex items-center space-x-3 mb-8">
           <div className="bg-primary text-white rounded-lg w-10 h-10 flex items-center justify-center">
-            <ChartLine className="w-5 h-5" />
+            <Building2 className="w-5 h-5" />
           </div>
           <div>
             <h1 className="text-lg font-bold text-gray-800">Elixr Labs Billing System</h1>
